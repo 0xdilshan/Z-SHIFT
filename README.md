@@ -1,5 +1,18 @@
 # 🐚 Z-SHIFT
 
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)
+![Zsh](https://img.shields.io/badge/zsh-%23333333.svg?style=flat-square&logo=zsh&logoColor=white)
+![Bash](https://img.shields.io/badge/bash-%234EAA25.svg?style=flat-square&logo=gnu-bash&logoColor=white)
+![Starship](https://img.shields.io/badge/starship-%23DD0B78.svg?style=flat-square&logo=starship&logoColor=white)
+![Gruvbox](https://img.shields.io/badge/Theme-Gruvbox-%23d79921?style=flat-square)
+![Zoxide](https://img.shields.io/badge/Nav-Zoxide-%23ff5555?style=flat-square&logo=rust&logoColor=white)
+![Eza](https://img.shields.io/badge/List-Eza-%2350fa7b?style=flat-square)
+![Bat](https://img.shields.io/badge/Cat-Bat-%23458588?style=flat-square)
+![Ripgrep](https://img.shields.io/badge/Search-Ripgrep-%233E8BFF?style=flat-square&logo=rust&logoColor=white)
+![Tealdeer](https://img.shields.io/badge/Docs-Tealdeer-%2320B2AA?style=flat-square&logo=rust&logoColor=white)
+![Nerd Fonts](https://img.shields.io/badge/Nerd_Fonts-%23333333.svg?style=flat-square&logo=nerdfonts&logoColor=white)
+![Git](https://img.shields.io/badge/git-%23F05033.svg?style=flat-square&logo=git&logoColor=white)
+
 <div align="center">
 
 ```text
@@ -96,6 +109,18 @@ chmod +x install.sh
 
 ------------
 
+## 🗺️ Roadmap
+
+- [x] Safety Backup: Automatically backup existing .zshrc
+- [ ] Multi-Distro Support: Add package manager detection (pacman, dnf, zypper) for Arch, Fedora, and OpenSUSE.
+- [ ] MacOS Support: Add Homebrew support for macOS users.
+- [ ] Interactive Menu: Allow users to select themes for starship and eza.
+- [ ] Uninstaller Script: Create a uninstall.sh to revert changes and restore the previous shell environment.
+- [ ] Docker Test Container: Provide a Dockerfile so users can test the setup safely in a container before applying it to their host machine.
+- [ ] Self-Updater: Add a command (e.g., zshift-update) to pull the latest aliases and config changes.
+
+
+------------
 
 ## 🤝 Contributing
 
