@@ -112,8 +112,8 @@ chmod +x install.sh
 ## 🗺️ Roadmap
 
 - [x] Safety Backup: Automatically backup existing `.zshrc`
-- [ ] Multi-Distro Support: Add package manager detection (`pacman`, `dnf`, `zypper`) for Arch, Fedora, and OpenSUSE.
-- [ ] MacOS Support: Add `Homebrew` support for macOS users.
+- [x] Multi-Distro Support: Add package manager detection (`pacman`, `dnf`, `zypper`) for Arch, Fedora, and OpenSUSE.
+- [x] MacOS Support: Add `Homebrew` support for macOS users.
 - [ ] Interactive Menu: Allow users to select themes for `starship` and `eza`.
 - [ ] Uninstaller Script: Create a `uninstall.sh` to revert changes and restore the previous shell environment.
 - [ ] Docker Test Container: Provide a `Dockerfile` so users can test the setup safely in a container before applying it to their host machine.
