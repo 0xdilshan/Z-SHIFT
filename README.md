@@ -15,32 +15,32 @@
 ![Nerd Fonts](https://img.shields.io/badge/Nerd_Fonts-%23333333.svg?style=flat-square&logo=nerdfonts&logoColor=white)
 ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=flat-square&logo=git&logoColor=white)
 
+
+**Z-SHIFT** is an automated installer script designed to transform a stock `Z-shell` (`ZSH`) into a high-performance + aesthetically pleasing development environment.
+
+It handles the heavy lifting of installing a modern plugin manager, configuring a lightning-fast prompt and setting up the next generation of CLI tools in a single command.
+
 <div align="center">
 
-```text
- ███████╗      ███████╗██╗  ██╗██╗███████╗████████╗
- ╚══███╔╝      ██╔════╝██║  ██║██║██╔════╝╚══██╔══╝
-   ███╔╝ █████╗███████╗███████║██║█████╗     ██║   
-  ███╔╝  ╚════╝╚════██║██╔══██║██║██╔══╝     ██║   
- ███████╗      ███████╗██║  ██║██║██║        ██║   
- ╚══════╝      ╚══════╝╚═╝  ╚═╝╚═╝╚═╝        ╚═╝
- ```
+[![asciicast](https://asciinema.org/a/qVjPp58itF6FGrI6.svg)](https://asciinema.org/a/qVjPp58itF6FGrI6)
+
  **🚅 High-Performance Zsh + 🌸Gruvbox + ⚡ Zinit + Extra Goodies Installer**
 
 </div>
 
 ------------
 
-## 📖 Overview
-
-
-**🐚 Z-SHIFT** is an automated bootstrap script designed to transform a stock Z-shell (ZSH) into a high-performance, aesthetically pleasing development environment.
-
-It handles the heavy lifting of installing a modern plugin manager, configuring a lightning-fast prompt, and setting up the next generation of CLI tools in a single command.
-
-[![asciicast](https://asciinema.org/a/qVjPp58itF6FGrI6.svg)](https://asciinema.org/a/qVjPp58itF6FGrI6)
+- [✨ Features](#-features)
+- [💿 Installation](#-installation)
+      + [One-Line Install](#one-line-install)
+      + [Manual Install](#manual-install)
+- [📦 Plugin Ecosystem](#-plugin-ecosystem)
+- [🗺️ Roadmap](#-roadmap)
+- [🤝 Contributing](#-contributing)
+- [📝 License](#-license)
 
 ------------
+
 
 ## ✨ Features
 
@@ -51,13 +51,9 @@ It handles the heavy lifting of installing a modern plugin manager, configuring 
 - ***🛠 Modern CLI Arsenal:*** Automatically installs and configures:
 
   - **zoxide:** A smarter `cd` command that learns your habits. [https://github.com/ajeetdsouza/zoxide]
-
   - **eza:** A modern, maintained replacement for `ls` with colors and icons. [https://github.com/eza-community/eza]
-
   - **bat:** A `cat` clone with syntax highlighting and Git integration. [https://github.com/sharkdp/bat]
-
   - **ripgrep:** A line-oriented search tool that respects .gitignore and is faster than grep. [https://github.com/BurntSushi/ripgrep]
-
   - **tealdeer:** A fast implementation of `tldr;` (simplified man pages). [https://github.com/tealdeer-rs/tealdeer]
 
 - ***⌨️ Pre-Configured Aliases:*** Includes a suite of intelligent aliases for common tasks to boost productivity immediately. You can use `alias` command to list all the aliases.
