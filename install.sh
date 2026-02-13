@@ -148,6 +148,26 @@ if [[ "$OS_TYPE" == "linux" ]]; then
 fi
 
 # =============================================================================
+# 3.1 CLIPBOARD UTILITIES
+# =============================================================================
+echo -e "${YELLOW}Configuring Clipboard Utilities...${NC}"
+
+if [[ "$OS_TYPE" == "macos" ]]; then
+    echo -e "${GREEN}MacOS detected: pbcopy/pbpaste are built-in.${NC}"
+else
+    # Linux Logic: Check Display Server
+    if [[ -n "$WAYLAND_DISPLAY" ]]; then
+        echo -e "${BLUE}Wayland detected ($WAYLAND_DISPLAY). Installing wl-clipboard...${NC}"
+        install_pkg wl-clipboard
+    elif [[ -n "$DISPLAY" ]]; then
+        echo -e "${BLUE}X11 detected ($DISPLAY). Installing xclip...${NC}"
+        install_pkg xclip
+    else
+        echo -e "${YELLOW}No GUI display detected (Headless/SSH). Skipping clipboard tools.${NC}"
+    fi
+fi
+
+# =============================================================================
 # 4. CONFIGURE EZA THEMES
 # =============================================================================
 echo -e "${YELLOW}Setting up Eza Themes (Gruvbox Dark)...${NC}"
