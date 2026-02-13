@@ -3,13 +3,14 @@
 # =============================================================================
 #  ███████╗      ███████╗██╗  ██╗██╗███████╗████████╗
 #  ╚══███╔╝      ██╔════╝██║  ██║██║██╔════╝╚══██╔══╝
-#    ███╔╝ █████╗███████╗███████║██║█████╗     ██║   
-#   ███╔╝  ╚════╝╚════██║██╔══██║██║██╔══╝     ██║   
-#  ███████╗      ███████║██║  ██║██║██║        ██║   
-#  ╚══════╝      ╚══════╝╚═╝  ╚═╝╚═╝╚═╝        ╚═╝   
+#    ███╔╝ █████╗███████╗███████║██║█████╗     ██║    
+#   ███╔╝  ╚════╝╚════██║██╔══██║██║██╔══╝     ██║    
+#  ███████╗      ███████╗██║  ██║██║██║        ██║    
+#  ╚══════╝      ╚══════╝╚═╝  ╚═╝╚═╝╚═╝        ╚═╝    
 # =============================================================================
 #  Z-SHIFT: High-Performance Zsh + Gruvbox Bootstrap
 #  Description: Automates Zinit, Starship, and Modern CLI Tooling.
+#  Support: Debian/Ubuntu, Arch, Fedora, OpenSUSE, MacOS
 # =============================================================================
 
 # Exit immediately if a command exits with a non-zero status
@@ -23,43 +24,131 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 CYAN='\033[0;36m'
+RED='\033[0;31m'
 NC='\033[0m' # No Color
 
 echo -e "${CYAN}>>> Initiating Z-Shift Environment Deployment...${NC}"
 
 # =============================================================================
-# 1. SYSTEM DEPENDENCIES
+# 0. OS & PACKAGE MANAGER DETECTION
 # =============================================================================
-echo -e "${YELLOW}Installing base dependencies (git, curl, unzip, zsh)...${NC}"
-sudo apt update
-sudo apt install -y wget gpg git curl unzip zsh xclip
+OS_TYPE="unknown"
+DISTRO="unknown"
+
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    OS_TYPE="macos"
+    DISTRO="macos"
+elif [ -f /etc/os-release ]; then
+    OS_TYPE="linux"
+    . /etc/os-release
+    DISTRO=$ID
+fi
+
+echo -e "${BLUE}Detected OS: ${OS_TYPE} (${DISTRO})${NC}"
+
+# Helper function to install packages based on distro
+install_pkg() {
+    local pkgs=("$@")
+    echo -e "${YELLOW}Installing: ${pkgs[*]}...${NC}"
+
+    case $DISTRO in
+        ubuntu|debian|pop|kali|linuxmint)
+            sudo apt update -y
+            sudo apt install -y "${pkgs[@]}"
+            ;;
+        arch|manjaro|endeavouros)
+            sudo pacman -Sy --noconfirm "${pkgs[@]}"
+            ;;
+        fedora|rhel|centos)
+            sudo dnf install -y "${pkgs[@]}"
+            ;;
+        opensuse*|suse)
+            sudo zypper install -y "${pkgs[@]}"
+            ;;
+        macos)
+            brew install "${pkgs[@]}"
+            ;;
+        *)
+            echo -e "${RED}Unsupported distribution: $DISTRO${NC}"
+            echo "Please install the following packages manually: ${pkgs[*]}"
+            exit 1
+            ;;
+    esac
+}
 
 # =============================================================================
-# 2. INSTALL STANDALONE TOOLS
+# 1. PRE-REQUISITES (Homebrew for MacOS)
 # =============================================================================
-# These are tools your .zshrc expects to exist on the system (eza, bat, rg).
-
-# --- Install Eza ---
-echo -e "${YELLOW}Installing Eza...${NC}"
-sudo mkdir -p /etc/apt/keyrings
-wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
-echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
-sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
-sudo apt update
-sudo apt install -y eza
-
-# --- Install Bat & Ripgrep ---
-echo -e "${YELLOW}Installing Bat and Ripgrep...${NC}"
-sudo apt install -y bat ripgrep
-
-# Fix 'bat' on Ubuntu (symlink batcat -> bat)
-if command -v batcat &> /dev/null; then
-    mkdir -p ~/.local/bin
-    ln -sf /usr/bin/batcat ~/.local/bin/bat
+if [[ "$OS_TYPE" == "macos" ]]; then
+    if ! command -v brew &> /dev/null; then
+        echo -e "${YELLOW}Homebrew not found. Installing Homebrew...${NC}"
+        /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+        
+        # Add brew to path for the current session
+        if [ -f "/opt/homebrew/bin/brew" ]; then
+            eval "$(/opt/homebrew/bin/brew shellenv)"
+        elif [ -f "/usr/local/bin/brew" ]; then
+            eval "$(/usr/local/bin/brew shellenv)"
+        fi
+    else
+        echo -e "${GREEN}Homebrew is already installed.${NC}"
+    fi
 fi
 
 # =============================================================================
-# 3. CONFIGURE EZA THEMES
+# 2. SYSTEM DEPENDENCIES
+# =============================================================================
+echo -e "${YELLOW}Installing base dependencies...${NC}"
+
+# Define base packages
+COMMON_DEPS="git curl unzip zsh"
+
+if [[ "$OS_TYPE" == "macos" ]]; then
+    # MacOS usually has git/curl/unzip/zsh, but we ensure updated versions via brew
+    # wget is not default on mac
+    install_pkg git curl wget unzip zsh
+else
+    # Linux specific checks
+    install_pkg wget gpg $COMMON_DEPS
+fi
+
+# =============================================================================
+# 3. INSTALL STANDALONE TOOLS (Eza, Bat, Ripgrep)
+# =============================================================================
+
+# --- Eza Installation ---
+echo -e "${YELLOW}Installing Eza (ls replacement)...${NC}"
+
+if [[ "$DISTRO" == "ubuntu" ]] || [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" == "kali" ]] || [[ "$DISTRO" == "linuxmint" ]]; then
+    # Debian/Ubuntu requires custom repo setup
+    sudo mkdir -p /etc/apt/keyrings
+    wget -qO- https://raw.githubusercontent.com/eza-community/eza/main/deb.asc | sudo gpg --dearmor -o /etc/apt/keyrings/gierens.gpg
+    echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/gierens.gpg] http://deb.gierens.de stable main" | sudo tee /etc/apt/sources.list.d/gierens.list
+    sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
+    sudo apt update
+    sudo apt install -y eza
+else
+    # Arch, Fedora, OpenSUSE, and MacOS have eza in standard/community repos
+    install_pkg eza
+fi
+
+# --- Bat & Ripgrep Installation ---
+echo -e "${YELLOW}Installing Bat and Ripgrep...${NC}"
+install_pkg bat ripgrep
+
+# Fix 'bat' naming on Ubuntu/Debian (symlink batcat -> bat)
+if [[ "$OS_TYPE" == "linux" ]]; then
+    if command -v batcat &> /dev/null && ! command -v bat &> /dev/null; then
+        echo "Symlinking batcat to bat..."
+        mkdir -p ~/.local/bin
+        ln -sf /usr/bin/batcat ~/.local/bin/bat
+        # Ensure ~/.local/bin is in PATH for the install script duration if needed
+        export PATH="$HOME/.local/bin:$PATH"
+    fi
+fi
+
+# =============================================================================
+# 4. CONFIGURE EZA THEMES
 # =============================================================================
 echo -e "${YELLOW}Setting up Eza Themes (Gruvbox Dark)...${NC}"
 rm -rf ~/.config/eza-themes
@@ -70,14 +159,17 @@ mkdir -p ~/.config/eza
 ln -sf ~/.config/eza-themes/themes/gruvbox-dark.yml ~/.config/eza/theme.yml
 
 # =============================================================================
-# 4. STARSHIP CONFIGURATION
+# 5. STARSHIP CONFIGURATION
 # =============================================================================
 echo -e "${YELLOW}Setting up Starship Config...${NC}"
 
-# We install a temporary system-level starship binary to generate the config file.
-# Your .zshrc will later install its own isolated version via Zinit, which is fine.
+# Install Starship if missing
 if ! command -v starship &> /dev/null; then
-    curl -sS https://starship.rs/install.sh | sh -s -- -y
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        install_pkg starship
+    else
+        curl -sS https://starship.rs/install.sh | sh -s -- -y
+    fi
 fi
 
 # Generate the Gruvbox Rainbow config
@@ -86,26 +178,35 @@ echo -e "${BLUE}Generating ~/.config/starship.toml...${NC}"
 starship preset gruvbox-rainbow -o ~/.config/starship.toml
 
 # =============================================================================
-# 5. FONTS (FiraCode Nerd Font)
+# 6. FONTS (FiraCode Nerd Font)
 # =============================================================================
 echo -e "${YELLOW}Installing FiraCode Nerd Font...${NC}"
-FONT_DIR="$HOME/.local/share/fonts"
+
+# Define Font Directory based on OS
+if [[ "$OS_TYPE" == "macos" ]]; then
+    FONT_DIR="$HOME/Library/Fonts"
+else
+    FONT_DIR="$HOME/.local/share/fonts"
+fi
+
 TEMP_DIR=$(mktemp -d)
 mkdir -p "$FONT_DIR"
 
 wget -q --show-progress -O "$TEMP_DIR/FiraCode.zip" "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.zip"
 unzip -q "$TEMP_DIR/FiraCode.zip" -d "$TEMP_DIR"
-mv "$TEMP_DIR"/*.ttf "$FONT_DIR/"
+
+# Move fonts (suppress errors if overwrite issues occur)
+mv -f "$TEMP_DIR"/*.ttf "$FONT_DIR/" 2>/dev/null || true
 rm -rf "$TEMP_DIR"
 
-# Refresh font cache
-if command -v fc-cache &> /dev/null; then
+# Refresh font cache (Linux only)
+if [[ "$OS_TYPE" == "linux" ]] && command -v fc-cache &> /dev/null; then
     echo "Rebuilding font cache..."
     fc-cache -f "$FONT_DIR"
 fi
 
 # =============================================================================
-# 6. DOWNLOAD .ZSHRC
+# 7. DOWNLOAD .ZSHRC
 # =============================================================================
 echo -e "${YELLOW}Downloading .zshrc from GitHub...${NC}"
 
@@ -120,29 +221,31 @@ if wget -O ~/.zshrc "$ZSHRC_URL"; then
     echo -e "${GREEN}Downloaded .zshrc successfully.${NC}"
 else
     echo -e "${RED}Failed to download .zshrc! Check the URL variable.${NC}"
-    # Restore backup if download failed
     [ -f ~/.zshrc.bak ] && mv ~/.zshrc.bak ~/.zshrc
     exit 1
 fi
 
 # =============================================================================
-# 7. FINALIZE
+# 8. FINALIZE
 # =============================================================================
 # Set Zsh as default
-# Define Zsh path
 ZSH_PATH=$(which zsh)
 
-# Ensure Zsh is in /etc/shells
+# Add to /etc/shells if missing
 if ! grep -q "$ZSH_PATH" /etc/shells; then
     echo "Adding $ZSH_PATH to /etc/shells..."
     echo "$ZSH_PATH" | sudo tee -a /etc/shells
 fi
 
-# Change shell (try non-interactive first)
+# Change shell
 if [ "$SHELL" != "$ZSH_PATH" ]; then
     echo "Changing default shell to Zsh..."
-    # Attempt to change shell using sudo (will ask for password once)
-    sudo usermod --shell "$ZSH_PATH" "$USER" || chsh -s "$ZSH_PATH"
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        chsh -s "$ZSH_PATH"
+    else
+        # Linux: try sudo usermod, fall back to chsh
+        sudo usermod --shell "$ZSH_PATH" "$USER" || chsh -s "$ZSH_PATH"
+    fi
 fi
 
 echo -e "\n${GREEN}✔ Z-Shift Installation Complete!${NC}"
