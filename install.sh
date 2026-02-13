@@ -32,7 +32,7 @@ echo -e "${CYAN}>>> Initiating Z-Shift Environment Deployment...${NC}"
 # =============================================================================
 echo -e "${YELLOW}Installing base dependencies (git, curl, unzip, zsh)...${NC}"
 sudo apt update
-sudo apt install -y wget gpg git curl unzip zsh
+sudo apt install -y wget gpg git curl unzip zsh xclip
 
 # =============================================================================
 # 2. INSTALL STANDALONE TOOLS
