@@ -1,8 +1,10 @@
 # 🐚 Z-SHIFT
 
 ![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)
+![macOS](https://img.shields.io/badge/OS-macOS-000000?style=flat-square&logo=apple&logoColor=white)
 ![Zsh](https://img.shields.io/badge/zsh-%23333333.svg?style=flat-square&logo=zsh&logoColor=white)
 ![Bash](https://img.shields.io/badge/bash-%234EAA25.svg?style=flat-square&logo=gnu-bash&logoColor=white)
+![Homebrew](https://img.shields.io/badge/Homebrew-%23FBB040?style=flat-square&logo=homebrew&logoColor=black)
 ![Starship](https://img.shields.io/badge/starship-%23DD0B78.svg?style=flat-square&logo=starship&logoColor=white)
 ![Gruvbox](https://img.shields.io/badge/Theme-Gruvbox-%23d79921?style=flat-square)
 ![Zoxide](https://img.shields.io/badge/Nav-Zoxide-%23ff5555?style=flat-square&logo=rust&logoColor=white)
