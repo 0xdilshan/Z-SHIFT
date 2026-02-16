@@ -41,9 +41,15 @@ zinit wait lucid for \
 zinit ice as"program" from"gh-r" mv"bat* -> bat" pick"bat/bat" wait lucid
 zinit light sharkdp/bat
 
+# --- FD (Find replacement) ---
+# Installs 'fd' binary (fixes 'fdfind' name issue on Debian)
+zinit ice as"program" from"gh-r" mv"fd* -> fd" pick"fd/fd" wait lucid
+zinit light sharkdp/fd
+
 # --- FZF (Fuzzy Finder) ---
+# Integated with fd for respect of .gitignore
 zinit ice as"program" from"gh-r" wait lucid \
-    atload'source <(fzf --zsh)'
+    atload'source <(fzf --zsh); export FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix --hidden --follow --exclude .git"; export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"'
 zinit light junegunn/fzf
 
 # --- RIPGREP (Grep replacement) ---
@@ -123,14 +129,10 @@ else
     alias lt='ls --tree --level=2'
 fi
 
-# --- The Modern Toolset (bat, rg, tldr, fzf) ---
-
-# cat -> bat
+# --- The Modern Toolset ---
 alias cat='bat -pp'
-
-# grep -> rg
-# Zinit guarantees 'rg' is installed
 alias grep='rg'
+alias find='fd' 
 
 # Help Aliases
 alias h='tldr'
