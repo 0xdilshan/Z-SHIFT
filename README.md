@@ -16,6 +16,7 @@
 ![Tealdeer](https://img.shields.io/badge/Docs-Tealdeer-%2320B2AA?style=flat-square&logo=rust&logoColor=white)
 ![Nerd Fonts](https://img.shields.io/badge/Nerd_Fonts-%23333333.svg?style=flat-square&logo=nerdfonts&logoColor=white)
 ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=flat-square&logo=git&logoColor=white)
+[![Z-Shift CI](https://github.com/0xdilshan/Z-SHIFT/actions/workflows/ci.yml/badge.svg)](https://github.com/0xdilshan/Z-SHIFT/actions/workflows/ci.yml)
 
 
 **Z-SHIFT** is an automated installer script designed to transform a stock `Z-shell` (`ZSH`) into a high-performance + aesthetically pleasing development environment.

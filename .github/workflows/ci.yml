@@ -57,7 +57,7 @@ jobs:
         run: |
           yes | ./install.sh
         env:
-          # Custom env var we might add to script later to skip font downloads in CI
+          # Custom env var to tell script to skip font downloads in CI
           CI_ENV: true 
 
       - name: Verify Zshrc Created

@@ -188,29 +188,35 @@ starship preset gruvbox-rainbow -o ~/.config/starship.toml
 # =============================================================================
 # 6. FONTS (FiraCode Nerd Font)
 # =============================================================================
-echo -e "${YELLOW}Installing FiraCode Nerd Font...${NC}"
-
-# Define Font Directory based on OS
-if [[ "$OS_TYPE" == "macos" ]]; then
-    FONT_DIR="$HOME/Library/Fonts"
+# CI/CD CHECK: Skip font download to save bandwidth and time in tests
+if [ "$CI_ENV" = "true" ]; then
+    echo -e "${YELLOW}>> CI Environment detected. Skipping Font Installation.${NC}"
 else
-    FONT_DIR="$HOME/.local/share/fonts"
-fi
+    echo -e "${YELLOW}Installing FiraCode Nerd Font...${NC}"
 
-TEMP_DIR=$(mktemp -d)
-mkdir -p "$FONT_DIR"
+    # Define Font Directory based on OS
+    if [[ "$OS_TYPE" == "macos" ]]; then
+        FONT_DIR="$HOME/Library/Fonts"
+    else
+        FONT_DIR="$HOME/.local/share/fonts"
+    fi
 
-wget -q --show-progress -O "$TEMP_DIR/FiraCode.zip" "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.zip"
-unzip -q "$TEMP_DIR/FiraCode.zip" -d "$TEMP_DIR"
+    TEMP_DIR=$(mktemp -d)
+    mkdir -p "$FONT_DIR"
 
-# Move fonts (suppress errors if overwrite issues occur)
-mv -f "$TEMP_DIR"/*.ttf "$FONT_DIR/" 2>/dev/null || true
-rm -rf "$TEMP_DIR"
+    # Download FiraCode (Quietly, but show progress)
+    wget -q --show-progress -O "$TEMP_DIR/FiraCode.zip" "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.4.0/FiraCode.zip"
+    unzip -q "$TEMP_DIR/FiraCode.zip" -d "$TEMP_DIR"
 
-# Refresh font cache (Linux only)
-if [[ "$OS_TYPE" == "linux" ]] && command -v fc-cache &> /dev/null; then
-    echo "Rebuilding font cache..."
-    fc-cache -f "$FONT_DIR"
+    # Move fonts (suppress errors if overwrite issues occur)
+    mv -f "$TEMP_DIR"/*.ttf "$FONT_DIR/" 2>/dev/null || true
+    rm -rf "$TEMP_DIR"
+
+    # Refresh font cache (Linux only)
+    if [[ "$OS_TYPE" == "linux" ]] && command -v fc-cache &> /dev/null; then
+        echo "Rebuilding font cache..."
+        fc-cache -f "$FONT_DIR"
+    fi
 fi
 
 # =============================================================================
@@ -238,6 +244,13 @@ fi
 # =============================================================================
 # Set Zsh as default
 ZSH_PATH=$(which zsh)
+
+# CI/CD CHECK: Skip shell change to prevent permission errors in runners
+if [ "$CI_ENV" = "true" ]; then
+    echo -e "\n${GREEN}✔ CI Environment detected. Skipping shell change.${NC}"
+    echo -e "${GREEN}✔ Z-Shift Installation Verified!${NC}"
+    exit 0
+fi
 
 # Add to /etc/shells if missing
 if ! grep -q "$ZSH_PATH" /etc/shells; then
