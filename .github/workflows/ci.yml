@@ -23,13 +23,12 @@ jobs:
         run: sudo apt-get install -y shellcheck
 
       - name: Lint Installer (Bash)
-        # SC2086: Double quote to prevent globbing/word splitting (common warning, good to fix but ignored here for pass)
-        # SC2034: Unused variables
-        # shellcheck disable=SC1091
+        # SC2086: Double quote variables (ignored for flexibility)
+        # SC2034: Unused variables (ignored)
+        # SC1091: Not following sourced files (ignored for /etc/os-release)
         run: shellcheck -e SC2086,SC2034,SC1091 install.sh
 
       - name: Verify Zsh Syntax
-        # This installs zsh and runs the syntax check (-n) on your config
         run: |
           sudo apt-get install -y zsh
           zsh -n .zshrc
@@ -53,12 +52,10 @@ jobs:
         run: chmod +x install.sh
 
       - name: Run Installer (Non-Interactive)
-        # We pipe 'yes' to handle any interactive prompts (like "Are you sure?")
-        # We use '|| true' on the chsh command because GitHub runners can be restrictive about shell changing
+        # Pipes 'yes' for prompts. Uses CI_ENV to skip fonts/chsh.
         run: |
           yes | ./install.sh
         env:
-          # Custom env var to tell script to skip font downloads in CI
           CI_ENV: true 
 
       - name: Verify Zshrc Created
@@ -68,20 +65,21 @@ jobs:
             exit 1
           fi
 
+      # FIX FOR MAC/UBUNTU: 
+      # We must run zsh once to trigger the Zinit git clone inside .zshrc
+      - name: Bootstrap Zinit (Initialize Zsh)
+        run: zsh -ic "exit" || true
+
       - name: Verify Plugins Installed
-        # Check if Zinit directory was created
         run: |
+          # Check standard XDG path or legacy path
           if [ ! -d "${HOME}/.local/share/zinit" ] && [ ! -d "${HOME}/.zinit" ]; then
-             echo "Error: Zinit directory not found!"
+             echo "Error: Zinit directory not found! Plugin installation failed."
              exit 1
           fi
 
-      - name: Dry-Run Load Zshrc
-        # Try to load the config in a non-interactive zsh session to check for runtime errors
-        run: zsh -ic "exit" || echo "Zsh loaded with warnings (expected in CI due to missing fonts/term support)"
-
   # -----------------------------------------------------------------------------
-  # JOB 3: MULTI-DISTRO DOCKER TEST
+  # JOB 3: MULTI-DISTRO DOCKER TEST (ARCH & FEDORA)
   # -----------------------------------------------------------------------------
   docker-matrix:
     needs: lint
@@ -96,32 +94,67 @@ jobs:
       
       - name: Test in Docker
         run: |
-          # Custom test script inside the container to mimic a user
           docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace ${{ matrix.distro }} /bin/bash -c "
-            echo 'Setting up dependencies for ${{ matrix.distro }}...'
+            # Set colors for better logging
+            GREEN='\033[0;32m'
+            NC='\033[0m'
             
-            # Install prerequisites depending on distro
+            echo -e \"\${GREEN}>>> 1. SETUP: Installing dependencies for ${{ matrix.distro }}...\${NC}\"
+            
+            # --- FIX FOR ARCH LINUX ---
             if [ -f /etc/arch-release ]; then
-              pacman -Sy --noconfirm git curl unzip sudo which
-              # Create a non-root user for realistic testing
-              useradd -m -s /bin/bash tester
-              echo 'tester ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
-            elif [ -f /etc/fedora-release ]; then
-              dnf install -y git curl unzip sudo util-linux-user which
+              # 1. Update keyring to fix signature errors
+              pacman -Sy --noconfirm archlinux-keyring
+              # 2. Install missing 'sudo' and base tools
+              pacman -Syu --noconfirm git curl unzip sudo which base-devel
+              
+              # 3. Create tester user
               useradd -m -s /bin/bash tester
               echo 'tester ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
             fi
 
-            # Switch to user and run install
-            echo 'Running installer as user tester...'
-            chmod +x install.sh
-            su tester -c 'yes | ./install.sh'
+            # --- FIX FOR FEDORA ---
+            if [ -f /etc/fedora-release ]; then
+              echo 'Upgrading Fedora packages...'
+              # 1. Refresh repo metadata
+              dnf upgrade -y --refresh
+              
+              echo 'Installing base tools...'
+              dnf install -y git curl unzip sudo util-linux-user which findutils dnf-plugins-core
+
+              echo 'Ensuring Eza is available...'
+              # 2. Install Eza (try standard repo first, fallback to COPR)
+              dnf install -y eza || (dnf copr enable -y piegames/eza && dnf install -y eza)
+              
+              # 3. Create tester user
+              useradd -m -s /bin/bash tester
+              echo 'tester ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+            fi
+
+            echo -e \"\${GREEN}>>> 2. TEST: Running installer as user tester...\${NC}\"
             
-            # Verification
+            # Ensure script is executable and owned by tester
+            chmod +x install.sh
+            chown tester:tester install.sh
+            
+            # Run as 'tester' with CI_ENV to skip fonts/chsh
+            su tester -c 'export CI_ENV=true && yes | ./install.sh'
+            
+            echo -e \"\${GREEN}>>> 3. VERIFY: Checking results...\${NC}\"
+            
             if [ -f /home/tester/.zshrc ]; then
               echo 'SUCCESS: .zshrc created'
             else
               echo 'FAILURE: .zshrc missing'
               exit 1
+            fi
+            
+            # Verify Zinit bootstrap logic works in container
+            su tester -c 'zsh -ic exit' || true
+            if [ -d /home/tester/.local/share/zinit ]; then
+               echo 'SUCCESS: Zinit installed'
+            else
+               echo 'FAILURE: Zinit missing'
+               exit 1
             fi
           "
