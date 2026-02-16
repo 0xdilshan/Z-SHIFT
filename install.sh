@@ -120,26 +120,45 @@ else
             sudo chmod 644 /etc/apt/keyrings/gierens.gpg /etc/apt/sources.list.d/gierens.list
             sudo apt update && sudo apt install -y eza
             ;;
-        fedora)
-            FEDORA_VERSION=$(rpm -E %fedora)
-            if [ "$FEDORA_VERSION" -ge 42 ]; then
-                echo -e "${YELLOW}:: Fedora $FEDORA_VERSION detected. Eza is not in official repos.${NC}"
-                ARCH=$(uname -m)
-                # Select correct binary based on architecture
-                if [ "$ARCH" == "x86_64" ]; then
-                    BINARY="eza_x86_64-unknown-linux-gnu.tar.gz"
-                elif [ "$ARCH" == "aarch64" ]; then
-                    BINARY="eza_aarch64-unknown-linux-gnu.tar.gz"
+            fedora)
+                FEDORA_VERSION=$(rpm -E %fedora)
+                
+                # Fedora 42+ logic (assuming eza isn't in repos yet)
+                if [ "$FEDORA_VERSION" -ge 42 ]; then
+                    echo -e "${YELLOW}:: Fedora $FEDORA_VERSION detected. Downloading binary...${NC}"
+                    
+                    ARCH=$(uname -m)
+                    case "$ARCH" in
+                        x86_64)  BINARY_ARCH="x86_64-unknown-linux-gnu" ;;
+                        aarch64) BINARY_ARCH="aarch64-unknown-linux-gnu" ;;
+                        armv7l)  BINARY_ARCH="arm-unknown-linux-gnueabihf" ;;
+                        *) echo -e "${RED}Unsupported arch: $ARCH${NC}"; exit 1 ;;
+                    esac
+            
+                    # Construct the filename based on the patterns in your screenshot
+                    FILENAME="eza_${BINARY_ARCH}.tar.gz"
+                    URL="https://github.com/eza-community/eza/releases/latest/download/${FILENAME}"
+                    
+                    echo -e "${BLUE}Downloading $FILENAME...${NC}"
+                    
+                    # Download and extract in one pipeline to avoid messy temp files
+                    curl -L "$URL" | tar -xz -C /tmp
+                    
+                    # Move and set permissions
+                    if [ -f "/tmp/eza" ]; then
+                        sudo mv /tmp/eza /usr/local/bin/eza
+                        sudo chmod +x /usr/local/bin/eza
+                        echo -e "${GREEN}:: eza installed successfully to /usr/local/bin/eza${NC}"
+                    else
+                        echo -e "${RED}Error: Binary 'eza' not found in archive.${NC}"
+                        exit 1
+                    fi
                 else
-                    echo -e "${RED}Unsupported arch for binary install: $ARCH${NC}"; exit 1
+                    # Standard repo install for older versions
+                    echo -e "${BLUE}:: Installing eza via DNF...${NC}"
+                    sudo dnf install -y eza
                 fi
-                curl -L "https://github.com/eza-community/eza/releases/latest/download/$BINARY" -o /tmp/eza.tar.gz
-                tar -xzf /tmp/eza.tar.gz -C /tmp && sudo mv /tmp/eza /usr/local/bin/eza
-                sudo chmod +x /usr/local/bin/eza && rm /tmp/eza.tar.gz
-            else
-                sudo dnf install -y eza
-            fi
-            ;;
+                ;;
         *)
             install_pkg eza
             ;;

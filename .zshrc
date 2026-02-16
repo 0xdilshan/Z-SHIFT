@@ -41,12 +41,13 @@ zinit wait lucid for \
 zinit ice as"program" from"gh-r" mv"bat* -> bat" pick"bat/bat" wait lucid
 zinit light sharkdp/bat
 
-# --- EZA (Smarter ls)
+# --- EZA (Smarter ls) Completions from Release Assets
 zinit ice wait lucid as"completion" \
+    from"gh-r" \
     has"eza" \
     id-as"eza-completions" \
-    atclone"cp completions/zsh/_eza _eza" \
-    atpull"%atclone" \
+    bpick"completions*" \
+    pick"zsh/_eza" \
     blockf
 zinit light eza-community/eza
 
