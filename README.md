@@ -30,6 +30,8 @@ It handles the heavy lifting of installing a modern plugin manager, configuring 
 
 ------------
 
+## Table of contents
+
 - [✨ Features](#-features)
 - [💿 Installation](#-installation)
       + [One-Line Install](#one-line-install)
@@ -50,11 +52,12 @@ It handles the heavy lifting of installing a modern plugin manager, configuring 
 
 - ***🛠 Modern CLI Arsenal:*** Automatically installs and configures:
 
-  - **zoxide:** A smarter `cd` command that learns your habits. [https://github.com/ajeetdsouza/zoxide]
-  - **eza:** A modern, maintained replacement for `ls` with colors and icons. [https://github.com/eza-community/eza]
   - **bat:** A `cat` clone with syntax highlighting and Git integration. [https://github.com/sharkdp/bat]
+  - **eza:** A modern & maintained replacement for `ls` with colors and icons. [https://github.com/eza-community/eza]
+  - **fzf:** A general-purpose command-line fuzzy finder for lightning-fast file and history navigation. [https://github.com/junegunn/fzf]
   - **ripgrep:** A line-oriented search tool that respects .gitignore and is faster than grep. [https://github.com/BurntSushi/ripgrep]
   - **tealdeer:** A fast implementation of `tldr;` (simplified man pages). [https://github.com/tealdeer-rs/tealdeer]
+  - **zoxide:** A smarter `cd` command that learns your habits. [https://github.com/ajeetdsouza/zoxide]
 
 - ***⌨️ Pre-Configured Aliases:*** Includes a suite of intelligent aliases for common tasks to boost productivity immediately. You can use `alias` command to list all the aliases.
 

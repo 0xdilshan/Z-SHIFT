@@ -31,21 +31,31 @@ zinit wait lucid for \
     OMZL::clipboard.zsh
 
 # B) Utilities
-# Added OMZP::extract here
 zinit wait lucid for \
     OMZP::extract \
     OMZP::sudo \
     OMZP::git \
     MichaelAquilina/zsh-you-should-use
 
+# --- BAT (Cat replacement) ---
+zinit ice as"program" from"gh-r" mv"bat* -> bat" pick"bat/bat" wait lucid
+zinit light sharkdp/bat
+
+# --- FZF (Fuzzy Finder) ---
+zinit ice as"program" from"gh-r" wait lucid \
+    atload'source <(fzf --zsh)'
+zinit light junegunn/fzf
+
+# --- RIPGREP (Grep replacement) ---
+zinit ice as"program" from"gh-r" mv"ripgrep* -> ripgrep" pick"ripgrep/rg" wait lucid
+zinit light BurntSushi/ripgrep
+
 # C) Zoxide (Smarter cd)
-# Note: --cmd cd replaces the standard 'cd' command automatically
 zinit ice wait lucid from"gh-r" as"program" \
     atload'eval "$(zoxide init zsh --cmd cd)"'
 zinit light ajeetdsouza/zoxide
 
 # D) TLDR (Tealdeer - Fast Rust version)
-# Downloads binary, renames it to 'tldr', and adds to path
 zinit ice wait lucid as"command" from"gh-r" \
     mv"tealdeer* -> tldr" \
     pick"tldr"
@@ -85,7 +95,6 @@ setopt AUTO_CD
 # =============================================================================
 
 # --- Navigation ---
-# 'cd' is handled by zoxide (see Plugin section C)
 alias -- -='cd -'
 alias ..='cd ..'
 alias ...='cd ../..'
@@ -99,7 +108,6 @@ alias reload='source ~/.zshrc'
 
 # --- Zinit & Maintenance ---
 alias zini='zinit'
-# Update Zinit, clean cache, and update TLDR database
 alias zup='zinit self-update && zinit update --parallel && zinit cclear && tldr --update'
 
 # --- Eza (The ls replacement) ---
@@ -110,34 +118,25 @@ if command -v eza &> /dev/null; then
     alias la='eza -lah --icons --git --group-directories-first'
     alias lt='eza --tree --level=2 --icons'
 else
-    # Fallbacks if eza is missing
     alias ls='ls --color=auto'
     alias ll='ls -lah'
     alias lt='ls --tree --level=2'
 fi
 
-# --- The Modern Toolset (bat, rg, tldr) ---
+# --- The Modern Toolset (bat, rg, tldr, fzf) ---
 
-# cat -> bat (using -pp to mimic plain cat behavior)
-if command -v bat &> /dev/null; then
-    alias cat='bat -pp'
-elif command -v batcat &> /dev/null; then
-    alias cat='batcat -pp'
-fi
+# cat -> bat
+alias cat='bat -pp'
 
 # grep -> rg
-if command -v rg &> /dev/null; then
-    alias grep='rg'
-else
-    alias grep='grep --color=auto'
-fi
+# Zinit guarantees 'rg' is installed
+alias grep='rg'
 
 # Help Aliases
 alias h='tldr'
 alias hup='tldr --update'
 
 # Smart Help Function
-# Usage: 'help tar' -> Tries tldr first, falls back to man
 help() {
     tldr "$@" || man "$@"
 }

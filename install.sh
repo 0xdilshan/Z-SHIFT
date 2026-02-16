@@ -3,10 +3,10 @@
 # =============================================================================
 #  ███████╗      ███████╗██╗  ██╗██╗███████╗████████╗
 #  ╚══███╔╝      ██╔════╝██║  ██║██║██╔════╝╚══██╔══╝
-#    ███╔╝ █████╗███████╗███████║██║█████╗     ██║    
-#   ███╔╝  ╚════╝╚════██║██╔══██║██║██╔══╝     ██║    
-#  ███████╗      ███████╗██║  ██║██║██║        ██║    
-#  ╚══════╝      ╚══════╝╚═╝  ╚═╝╚═╝╚═╝        ╚═╝    
+#    ███╔╝ █████╗███████╗███████║██║█████╗     ██║   
+#   ███╔╝  ╚════╝╚════██║██╔══██║██║██╔══╝     ██║   
+#  ███████╗      ███████╗██║  ██║██║██║         ██║   
+#  ╚══════╝      ╚══════╝╚═╝  ╚═╝╚═╝╚═╝         ╚═╝   
 # =============================================================================
 #  Z-SHIFT: High-Performance Zsh + Gruvbox Bootstrap
 #  Description: Automates Zinit, Starship, and Modern CLI Tooling.
@@ -104,8 +104,6 @@ echo -e "${YELLOW}Installing base dependencies...${NC}"
 COMMON_DEPS="git curl unzip zsh"
 
 if [[ "$OS_TYPE" == "macos" ]]; then
-    # MacOS usually has git/curl/unzip/zsh, but we ensure updated versions via brew
-    # wget is not default on mac
     install_pkg git curl wget unzip zsh
 else
     # Linux specific checks
@@ -113,7 +111,7 @@ else
 fi
 
 # =============================================================================
-# 3. INSTALL STANDALONE TOOLS (Eza, Bat, Ripgrep)
+# 3. INSTALL STANDALONE TOOLS (Eza, Ripgrep)
 # =============================================================================
 
 # --- Eza Installation ---
@@ -132,20 +130,10 @@ else
     install_pkg eza
 fi
 
-# --- Bat & Ripgrep Installation ---
-echo -e "${YELLOW}Installing Bat and Ripgrep...${NC}"
-install_pkg bat ripgrep
-
-# Fix 'bat' naming on Ubuntu/Debian (symlink batcat -> bat)
-if [[ "$OS_TYPE" == "linux" ]]; then
-    if command -v batcat &> /dev/null && ! command -v bat &> /dev/null; then
-        echo "Symlinking batcat to bat..."
-        mkdir -p ~/.local/bin
-        ln -sf /usr/bin/batcat ~/.local/bin/bat
-        # Ensure ~/.local/bin is in PATH for the install script duration if needed
-        export PATH="$HOME/.local/bin:$PATH"
-    fi
-fi
+# --- Package Installation Snippet ---
+# Note: Bat, Ripgrep and FZF are now handled by Zinit in .zshrc
+# echo -e "${YELLOW}Installing Ripgrep...${NC}"
+# install_pkg ripgrep
 
 # =============================================================================
 # 3.1 CLIPBOARD UTILITIES
