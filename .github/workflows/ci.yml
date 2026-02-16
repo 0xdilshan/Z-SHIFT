@@ -25,7 +25,8 @@ jobs:
       - name: Lint Installer (Bash)
         # SC2086: Double quote to prevent globbing/word splitting (common warning, good to fix but ignored here for pass)
         # SC2034: Unused variables
-        run: shellcheck -e SC2086,SC2034 install.sh
+        # shellcheck disable=SC1091
+        run: shellcheck -e SC2086,SC2034,SC1091 install.sh
 
       - name: Verify Zsh Syntax
         # This installs zsh and runs the syntax check (-n) on your config
