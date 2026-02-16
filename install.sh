@@ -128,9 +128,9 @@ if [[ "$DISTRO" == "ubuntu" ]] || [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" ==
     sudo apt update
     sudo apt install -y eza
 else
-    # Arch, Fedora, OpenSUSE, and MacOS
-    # FIX: Check if eza exists first. 
-    # This saves time and prevents errors in CI where eza is pre-installed.
+    # Arch, Fedora, OpenSUSE, and MacOS have eza in standard/community repos
+    # FIX: Check if eza is already installed (Critical for CI/CD)
+
     if command -v eza &> /dev/null; then
         echo -e "${GREEN}:: Eza is already installed. Skipping.${NC}"
     else
@@ -239,7 +239,10 @@ if [ -f ~/.zshrc ]; then
 fi
 
 # Download
-if wget -O ~/.zshrc "$ZSHRC_URL"; then
+# FIX: Use 'curl' instead of 'wget'. 
+# Curl handles 'file://' protocol (used in CI) much better than wget.
+
+if curl -fsSL -o ~/.zshrc "$ZSHRC_URL"; then
     echo -e "${GREEN}Downloaded .zshrc successfully.${NC}"
 else
     echo -e "${RED}Failed to download .zshrc! Check the URL variable.${NC}"
