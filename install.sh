@@ -60,7 +60,6 @@ install_pkg() {
             # Added '--needed' to skip packages that are already up-to-date
             sudo pacman -Sy --noconfirm --needed "${pkgs[@]}"
             ;;
-            ;;
         fedora|rhel|centos)
             sudo dnf install -y "${pkgs[@]}"
             ;;
