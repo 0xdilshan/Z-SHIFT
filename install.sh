@@ -57,7 +57,9 @@ install_pkg() {
             sudo apt install -y "${pkgs[@]}"
             ;;
         arch|manjaro|endeavouros)
-            sudo pacman -Sy --noconfirm "${pkgs[@]}"
+            # Added '--needed' to skip packages that are already up-to-date
+            sudo pacman -Sy --noconfirm --needed "${pkgs[@]}"
+            ;;
             ;;
         fedora|rhel|centos)
             sudo dnf install -y "${pkgs[@]}"
@@ -107,7 +109,8 @@ if [[ "$OS_TYPE" == "macos" ]]; then
     install_pkg git curl wget unzip zsh
 else
     # Linux specific checks
-    install_pkg wget gpg $COMMON_DEPS
+    # NEW (Works everywhere)
+    install_pkg wget gnupg $COMMON_DEPS
 fi
 
 # =============================================================================
@@ -126,8 +129,14 @@ if [[ "$DISTRO" == "ubuntu" ]] || [[ "$DISTRO" == "debian" ]] || [[ "$DISTRO" ==
     sudo apt update
     sudo apt install -y eza
 else
-    # Arch, Fedora, OpenSUSE, and MacOS have eza in standard/community repos
-    install_pkg eza
+    # Arch, Fedora, OpenSUSE, and MacOS
+    # FIX: Check if eza exists first. 
+    # This saves time and prevents errors in CI where eza is pre-installed.
+    if command -v eza &> /dev/null; then
+        echo -e "${GREEN}:: Eza is already installed. Skipping.${NC}"
+    else
+        install_pkg eza
+    fi
 fi
 
 # --- Package Installation Snippet ---

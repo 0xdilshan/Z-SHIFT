@@ -78,7 +78,7 @@ jobs:
              exit 1
           fi
 
-  # -----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
   # JOB 3: MULTI-DISTRO DOCKER TEST (ARCH & FEDORA)
   # -----------------------------------------------------------------------------
   docker-matrix:
@@ -101,46 +101,50 @@ jobs:
             
             echo -e \"\${GREEN}>>> 1. SETUP: Installing dependencies for ${{ matrix.distro }}...\${NC}\"
             
-            # --- FIX FOR ARCH LINUX ---
+            # --- ARCH LINUX ---
             if [ -f /etc/arch-release ]; then
-              # 1. Update keyring to fix signature errors
               pacman -Sy --noconfirm archlinux-keyring
-              # 2. Install missing 'sudo' and base tools
-              pacman -Syu --noconfirm git curl unzip sudo which base-devel
+              # Ensure wget is installed to handle the file:// download
+              pacman -Syu --noconfirm git curl wget unzip sudo which base-devel ca-certificates
               
-              # 3. Create tester user
               useradd -m -s /bin/bash tester
               echo 'tester ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
             fi
 
-            # --- FIX FOR FEDORA ---
+            # --- FEDORA ---
             if [ -f /etc/fedora-release ]; then
-              echo 'Upgrading Fedora packages...'
-              # 1. Refresh repo metadata
               dnf upgrade -y --refresh
-              
-              echo 'Installing base tools...'
-              dnf install -y git curl unzip sudo util-linux-user which findutils dnf-plugins-core
+              dnf install -y git curl wget unzip sudo util-linux-user which findutils dnf-plugins-core ca-certificates
 
-              echo 'Ensuring Eza is available...'
-              # 2. Install Eza (try standard repo first, fallback to COPR)
+              # Pre-install Eza
               dnf install -y eza || (dnf copr enable -y piegames/eza && dnf install -y eza)
               
-              # 3. Create tester user
               useradd -m -s /bin/bash tester
               echo 'tester ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
             fi
 
-            echo -e \"\${GREEN}>>> 2. TEST: Running installer as user tester...\${NC}\"
+            echo -e \"\${GREEN}>>> 2. PREPARE: Injecting local file path...\${NC}\"
             
-            # Ensure script is executable and owned by tester
-            chmod +x install.sh
-            chown tester:tester install.sh
+            # 1. Copy the repository files to a temp location so we can modify them freely
+            cp /workspace/install.sh /tmp/install.sh
+            cp /workspace/.zshrc /tmp/.zshrc
             
-            # Run as 'tester' with CI_ENV to skip fonts/chsh
-            su tester -c 'export CI_ENV=true && yes | ./install.sh'
+            # 2. USE SED TO REPLACE THE URL
+            # This changes the URL from 'https://...' to 'file:///tmp/.zshrc'
+            # Now wget will 'download' the local file instead of going to the internet.
+            sed -i 's|^ZSHRC_URL=.*|ZSHRC_URL=\"file:///tmp/.zshrc\"|' /tmp/install.sh
+
+            # 3. Permissions
+            chmod +x /tmp/install.sh
+            chmod 644 /tmp/.zshrc
+            chown -R tester:tester /tmp
+
+            echo -e \"\${GREEN}>>> 3. TEST: Running installer as user tester...\${NC}\"
             
-            echo -e \"\${GREEN}>>> 3. VERIFY: Checking results...\${NC}\"
+            # Run the modified script in /tmp
+            su tester -c 'export CI_ENV=true && yes | /tmp/install.sh'
+            
+            echo -e \"\${GREEN}>>> 4. VERIFY: Checking results...\${NC}\"
             
             if [ -f /home/tester/.zshrc ]; then
               echo 'SUCCESS: .zshrc created'
@@ -149,7 +153,7 @@ jobs:
               exit 1
             fi
             
-            # Verify Zinit bootstrap logic works in container
+            # Verify Zinit bootstrap
             su tester -c 'zsh -ic exit' || true
             if [ -d /home/tester/.local/share/zinit ]; then
                echo 'SUCCESS: Zinit installed'
