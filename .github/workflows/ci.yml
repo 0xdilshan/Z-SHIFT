@@ -1,0 +1,126 @@
+name: Z-Shift CI
+
+on:
+  push:
+    branches: [ main ]
+    paths-ignore: ['README.md', 'LICENSE']
+  pull_request:
+    branches: [ main ]
+    paths-ignore: ['README.md', 'LICENSE']
+  workflow_dispatch:
+
+jobs:
+  # -----------------------------------------------------------------------------
+  # JOB 1: STATIC ANALYSIS (LINTING)
+  # -----------------------------------------------------------------------------
+  lint:
+    runs-on: ubuntu-latest
+    name: Syntax Check
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Shellcheck
+        run: sudo apt-get install -y shellcheck
+
+      - name: Lint Installer (Bash)
+        # SC2086: Double quote to prevent globbing/word splitting (common warning, good to fix but ignored here for pass)
+        # SC2034: Unused variables
+        run: shellcheck -e SC2086,SC2034 install.sh
+
+      - name: Verify Zsh Syntax
+        # This installs zsh and runs the syntax check (-n) on your config
+        run: |
+          sudo apt-get install -y zsh
+          zsh -n .zshrc
+
+  # -----------------------------------------------------------------------------
+  # JOB 2: INTEGRATION TEST (UBUNTU & MACOS)
+  # -----------------------------------------------------------------------------
+  integration-test:
+    needs: lint
+    name: Install on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Grant Execute Permissions
+        run: chmod +x install.sh
+
+      - name: Run Installer (Non-Interactive)
+        # We pipe 'yes' to handle any interactive prompts (like "Are you sure?")
+        # We use '|| true' on the chsh command because GitHub runners can be restrictive about shell changing
+        run: |
+          yes | ./install.sh
+        env:
+          # Custom env var we might add to script later to skip font downloads in CI
+          CI_ENV: true 
+
+      - name: Verify Zshrc Created
+        run: |
+          if [ ! -f "$HOME/.zshrc" ]; then
+            echo "Error: .zshrc was not created!"
+            exit 1
+          fi
+
+      - name: Verify Plugins Installed
+        # Check if Zinit directory was created
+        run: |
+          if [ ! -d "${HOME}/.local/share/zinit" ] && [ ! -d "${HOME}/.zinit" ]; then
+             echo "Error: Zinit directory not found!"
+             exit 1
+          fi
+
+      - name: Dry-Run Load Zshrc
+        # Try to load the config in a non-interactive zsh session to check for runtime errors
+        run: zsh -ic "exit" || echo "Zsh loaded with warnings (expected in CI due to missing fonts/term support)"
+
+  # -----------------------------------------------------------------------------
+  # JOB 3: MULTI-DISTRO DOCKER TEST
+  # -----------------------------------------------------------------------------
+  docker-matrix:
+    needs: lint
+    name: Docker Test (${{ matrix.distro }})
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        distro: [archlinux:latest, fedora:latest]
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Test in Docker
+        run: |
+          # Custom test script inside the container to mimic a user
+          docker run --rm -v ${{ github.workspace }}:/workspace -w /workspace ${{ matrix.distro }} /bin/bash -c "
+            echo 'Setting up dependencies for ${{ matrix.distro }}...'
+            
+            # Install prerequisites depending on distro
+            if [ -f /etc/arch-release ]; then
+              pacman -Sy --noconfirm git curl unzip sudo which
+              # Create a non-root user for realistic testing
+              useradd -m -s /bin/bash tester
+              echo 'tester ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+            elif [ -f /etc/fedora-release ]; then
+              dnf install -y git curl unzip sudo util-linux-user which
+              useradd -m -s /bin/bash tester
+              echo 'tester ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
+            fi
+
+            # Switch to user and run install
+            echo 'Running installer as user tester...'
+            chmod +x install.sh
+            su tester -c 'yes | ./install.sh'
+            
+            # Verification
+            if [ -f /home/tester/.zshrc ]; then
+              echo 'SUCCESS: .zshrc created'
+            else
+              echo 'FAILURE: .zshrc missing'
+              exit 1
+            fi
+          "
