@@ -41,6 +41,15 @@ zinit wait lucid for \
 zinit ice as"program" from"gh-r" mv"bat* -> bat" pick"bat/bat" wait lucid
 zinit light sharkdp/bat
 
+# --- EZA (Smarter ls)
+zinit ice wait lucid as"completion" \
+    has"eza" \
+    id-as"eza-completions" \
+    atclone"cp completions/zsh/_eza _eza" \
+    atpull"%atclone" \
+    blockf
+zinit light eza-community/eza
+
 # --- FD (Find replacement) ---
 # Installs 'fd' binary (fixes 'fdfind' name issue on Debian)
 zinit ice as"program" from"gh-r" mv"fd* -> fd" pick"fd/fd" wait lucid
@@ -56,27 +65,18 @@ zinit light junegunn/fzf
 zinit ice as"program" from"gh-r" mv"ripgrep* -> ripgrep" pick"ripgrep/rg" wait lucid
 zinit light BurntSushi/ripgrep
 
-# C) Zoxide (Smarter cd)
-zinit ice wait lucid from"gh-r" as"program" \
-    atload'eval "$(zoxide init zsh --cmd cd)"'
-zinit light ajeetdsouza/zoxide
-
-# D) TLDR (Tealdeer - Fast Rust version)
+# --- TLDR (Tealdeer - Fast Rust version)
 zinit ice wait lucid as"command" from"gh-r" \
     mv"tealdeer* -> tldr" \
     pick"tldr"
 zinit light tealdeer-rs/tealdeer
 
-# E) EZA (Smarter ls)
-zinit ice wait lucid as"completion" \
-    has"eza" \
-    id-as"eza-completions" \
-    atclone"cp completions/zsh/_eza _eza" \
-    atpull"%atclone" \
-    blockf
-zinit light eza-community/eza
+# --- Zoxide (Smarter cd)
+zinit ice wait lucid from"gh-r" as"program" \
+    atload'eval "$(zoxide init zsh --cmd cd)"'
+zinit light ajeetdsouza/zoxide
 
-# F) Syntax Highlighting & Autosuggestions
+# C) Syntax Highlighting & Autosuggestions
 zinit wait lucid for \
     atinit"zicompinit; zicdreplay" \
         zdharma-continuum/fast-syntax-highlighting \
