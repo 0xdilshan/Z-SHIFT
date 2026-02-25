@@ -47,8 +47,9 @@ zinit load sharkdp/fd
 zinit ice as"program" from"gh-r" wait lucid \
     atclone"./fzf --zsh > init.zsh" \
     atpull"%atclone" \
-    src"init.zsh"
-zinit load junegunn/fzf
+    src"init.zsh" \
+    atload'export FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix --hidden --follow --exclude .git"; export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"'
+zinit light junegunn/fzf
 
 # --- RIPGREP (Grep replacement) ---
 zinit ice as"program" from"gh-r" mv"ripgrep* -> ripgrep" pick"ripgrep/rg" wait lucid
@@ -63,24 +64,27 @@ zinit ice as"program" from"gh-r" pick"zoxide" \
     atclone"./zoxide init zsh --cmd cd > init.zsh" \
     atpull"%atclone" \
     src"init.zsh" nocompile"init.zsh"
-zinit load ajeetdsouza/zoxide
+zinit light ajeetdsouza/zoxide
 
 # --- Completions, Suggestions & Highlighting ---
 
-# 1. Load Completions First
+# Load extra completions first
 zinit wait lucid blockf atpull"zinit creinstall -q ." for \
     zsh-users/zsh-completions
 
-# 2. FZF-Tab (Replaces standard completion menu)
-zinit wait lucid atinit"zicompinit; zicdreplay" \
-    atload'compdump="${ZSH_COMPDUMP:-${ZDOTDIR:-$HOME}/.zcompdump}"; [[ ! -s "${compdump}.zwc" || "$compdump" -nt "${compdump}.zwc" ]] && zcompile "$compdump" &!' \
-    for Aloxaf/fzf-tab
 
-# 3. Syntax Highlighting (Must load after completions)
-zinit wait lucid for zdharma-continuum/fast-syntax-highlighting
+# IMPORTANT ORDER:
+# compinit -> fzf-tab -> syntax-highlighting -> autosuggestions
 
-# 4. Autosuggestions (Must load absolutely last)
-zinit wait lucid atload"_zsh_autosuggest_start" for zsh-users/zsh-autosuggestions
+zinit wait lucid \
+    atinit"zicompinit; zicdreplay" \
+    atload'compdump="${ZSH_COMPDUMP:-${ZDOTDIR:-$HOME}/.zcompdump}";
+            [[ ! -s "${compdump}.zwc" || "$compdump" -nt "${compdump}.zwc" ]] &&
+            zcompile "$compdump" &!' \
+    for Aloxaf/fzf-tab \
+        zdharma-continuum/fast-syntax-highlighting \
+    atload"_zsh_autosuggest_start" \
+        zsh-users/zsh-autosuggestions
 
 # =============================================================================
 # 4. CONFIGURATION
@@ -100,10 +104,6 @@ setopt HIST_REDUCE_BLANKS
 setopt SHARE_HISTORY
 setopt APPEND_HISTORY
 setopt AUTO_CD
-
-# --- FZF Variables ---
-export FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix --hidden --follow --exclude .git"
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 
 # --- Completion Styling (Replaces OMZL::completion.zsh) ---
 # Case-insensitive matching (a matches A)
@@ -135,8 +135,15 @@ alias ...='cd ../..'
 alias md='mkdir -p'
 
 # --- Quick Edits ---
-alias sconf='${EDITOR:-nano} ~/.config/starship.toml'
-alias zconf='${EDITOR:-nano} ~/.zshrc'
+# Config shortcuts
+_edit() {
+  local editor
+  editor=$(command -v nano 2>/dev/null || command -v vi)
+  "$editor" "$@"
+}
+
+sconf() { _edit "${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml" }
+zconf() { _edit "${ZDOTDIR:-$HOME}/.zshrc" }
 alias reload='exec zsh'
 
 # --- Human readable disk usage ---
