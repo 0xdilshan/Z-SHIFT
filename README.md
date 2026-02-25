@@ -44,6 +44,7 @@ It handles the heavy lifting of installing a modern plugin manager, configuring 
 - [💿 Installation](#-installation)
       + [One-Line Install](#one-line-install)
       + [Manual Install](#manual-install)
+- [📥 Update z-shift](#-update)
 - [🗑️ Uninstall Z-SHIFT](#uninstall-z-shift)
 - [🎨 Change Themes](#-change-themes)
 - [📦 Plugin Ecosystem](#-plugin-ecosystem)
@@ -101,6 +102,17 @@ curl -O https://raw.githubusercontent.com/0xdilshan/Z-SHIFT/main/install.sh
 chmod +x install.sh
 ./install.sh
 ```
+------------
+
+## 📥 Update
+
+You can easily update to latest .zshrc config using alias in the below.
+
+```bash
+zsu
+```
+
+
 ------------
 
 ## Uninstall Z-SHIFT
