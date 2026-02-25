@@ -23,10 +23,8 @@ zinit load starship/starship
 
 # --- Core Libraries & Utilities ---
 zinit wait lucid for \
-    OMZL::clipboard.zsh \
     OMZP::extract \
     OMZP::sudo \
-    OMZP::git \
     MichaelAquilina/zsh-you-should-use
 
 # --- BAT (Cat replacement) ---
@@ -145,6 +143,53 @@ _edit() {
 sconf() { _edit "${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml" }
 zconf() { _edit "${ZDOTDIR:-$HOME}/.zshrc" }
 alias reload='exec zsh'
+
+# --- Git Shortcuts ---
+
+alias g='git'
+alias ga='git add'
+alias gaa='git add -A'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gca='git commit --amend'
+alias gcb='git checkout -b'
+alias gco='git checkout'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gf='git fetch'
+alias gl='git log --oneline --graph --decorate'
+alias gla='git log --oneline --graph --decorate --all'
+alias gm='git merge'
+alias gp='git push'
+alias gpf='git push --force-with-lease'
+alias gpl='git pull'
+alias gpr='git pull --rebase'
+alias grb='git rebase'
+alias grbi='git rebase -i'
+alias grs='git restore'
+alias grss='git restore --staged'
+alias gs='git status'
+alias gss='git status -s'
+alias gst='git stash'
+alias gstp='git stash pop'
+alias gstl='git stash list'
+alias gsw='git switch'
+alias gswc='git switch -c'
+alias gpsu='git push --set-upstream origin $(git branch --show-current)' # Push and set upstream in one go
+alias gundo='git reset --soft HEAD~1' # Undo last commit but keep changes staged
+alias gnuke='git reset --hard HEAD~1' # Nuke last commit and changes entirely
+alias gbr='git branch --sort=-committerdate' # Show branches sorted by most recent commit
+
+# Open the git repository's remote URL in the default web browser
+
+gopen() {
+  local url=$(git remote get-url origin 2>/dev/null)
+  [[ -z "$url" ]] && echo "No remote 'origin' found" && return 1
+
+  url=$(echo "$url" | sed 's|^git@\(.*\):|https://\1/|; s|\.git$||')
+
+  open "$url" 2>/dev/null || xdg-open "$url" 2>/dev/null || echo "Could not open: $url"
+}
 
 # --- Human readable disk usage ---
 alias df='df -h'
