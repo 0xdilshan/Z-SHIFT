@@ -153,6 +153,48 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/0xdilshan/Z-SHIFT/main/t
   - **Autosuggestions:** Fish-style inline suggestions powered by `zsh-autosuggestions`.
   - **Clipboard:** Cross-platform clipboard integration.
 
+<details>
+
+<summary>clip command usage examples:</summary>
+
+**Copying to the clipboard**
+
+```bash
+# Copy a string directly
+echo "This is now in my clipboard" | clip
+
+# Copy the contents of a file
+cat ~/.ssh/id_rsa.pub | clip
+
+# Copy the output of a command
+ls -la | clip
+```
+
+**Pasting from the clipboard**
+
+```bash
+#Paste clipboard contents directly into the terminal
+clip
+
+#Paste clipboard contents into a new file
+clip > pasted_data.txt
+
+#Pipe clipboard contents into another command
+clip | grep "error"
+```
+
+**Advanced Chaining**
+
+```bash
+#Read clipboard, convert to lowercase, and copy the result back to clipboard
+clip | tr 'A-Z' 'a-z' | clip
+
+#Format JSON currently in the clipboard and copy it back
+clip | jq . | clip
+```
+
+</details>
+
 - ### Power Utilities
 
   - **extract:** One command to decompress almost any archive file (`.tar`, `.zip`, `.gz`, etc.).
