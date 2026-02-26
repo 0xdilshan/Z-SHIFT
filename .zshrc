@@ -163,6 +163,8 @@ zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always -- "$realpath"'
 # Switch completion groups using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
+# Scroll in eza preview using Ctrl+j/k bindings
+zstyle ':fzf-tab:*' fzf-flags --bind 'ctrl-j:preview-down' --bind 'ctrl-k:preview-up'
 
 # =============================================================================
 # 5. ALIASES & FUNCTIONS
