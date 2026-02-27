@@ -28,7 +28,7 @@ It handles the heavy lifting of installing a modern plugin manager, configuring 
 
 <div align="center">
 
-<a href="https://asciinema.org/a/OxCngXRZiIHzFFLL" target="_blank"><img src="https://asciinema.org/a/OxCngXRZiIHzFFLL.svg" /></a>
+<a href="https://asciinema.org/a/lfoK4Wtcqwo6bJsK" target="_blank"><img src="https://asciinema.org/a/lfoK4Wtcqwo6bJsK.svg" /></a>
 
  ***🚅 High-Performance Zsh + 🌸Gruvbox + ⚡ Zinit + Extra Goodies Installer***
  
