@@ -17,7 +17,7 @@
 ![Tealdeer](https://img.shields.io/badge/Docs-Tealdeer-%2320B2AA?style=flat-square&logo=rust&logoColor=white)
 ![Nerd Fonts](https://img.shields.io/badge/Nerd_Fonts-%23333333.svg?style=flat-square&logo=nerdfonts&logoColor=white)
 ![Git](https://img.shields.io/badge/git-%23F05033.svg?style=flat-square&logo=git&logoColor=white)
-![Zsh Startup Time](https://img.shields.io/badge/Startup_Time-%3C70ms-success?style=flat-square&logo=zsh)
+![Zsh Interactive Prompt Time](https://img.shields.io/badge/Startup_Time-%3C69ms-success?style=flat-square&logo=zsh)
 ![Input Lag](https://img.shields.io/badge/Input_Lag-~3ms-blue?style=flat-square)
 [![Z-Shift CI](https://github.com/0xdilshan/Z-SHIFT/actions/workflows/ci.yml/badge.svg)](https://github.com/0xdilshan/Z-SHIFT/actions/workflows/ci.yml)
 
@@ -28,11 +28,11 @@ It handles the heavy lifting of installing a modern plugin manager, configuring 
 
 <div align="center">
 
-[![asciicast](https://asciinema.org/a/qVjPp58itF6FGrI6.svg)](https://asciinema.org/a/qVjPp58itF6FGrI6)
+<a href="https://asciinema.org/a/lfoK4Wtcqwo6bJsK" target="_blank"><img src="https://asciinema.org/a/lfoK4Wtcqwo6bJsK.svg" alt="Z-SHIFT terminal demo recording" /></a>
 
  ***🚅 High-Performance Zsh + 🌸Gruvbox + ⚡ Zinit + Extra Goodies Installer***
  
- ***⚡ ~20ms core startup time with a total time-to-prompt of under 70ms.***
+ ***⚡ ~20ms core startup time with a total time-to-prompt of under 69ms.***
 
 </div>
 
@@ -44,6 +44,7 @@ It handles the heavy lifting of installing a modern plugin manager, configuring 
 - [💿 Installation](#-installation)
       + [One-Line Install](#one-line-install)
       + [Manual Install](#manual-install)
+- [📥 Update z-shift](#-update)
 - [🗑️ Uninstall Z-SHIFT](#uninstall-z-shift)
 - [🎨 Change Themes](#-change-themes)
 - [📦 Plugin Ecosystem](#-plugin-ecosystem)
@@ -103,6 +104,17 @@ chmod +x install.sh
 ```
 ------------
 
+## 📥 Update
+
+Run the alias below to update to the latest `.zshrc` config.
+
+```bash
+zsu
+```
+
+
+------------
+
 ## Uninstall Z-SHIFT
 
 
@@ -141,6 +153,48 @@ bash -c "$(curl -fsSL https://raw.githubusercontent.com/0xdilshan/Z-SHIFT/main/t
   - **Autosuggestions:** Fish-style inline suggestions powered by `zsh-autosuggestions`.
   - **Clipboard:** Cross-platform clipboard integration.
 
+<details open>
+
+<summary>clip command usage examples:</summary>
+
+**Copying to the clipboard**
+
+```bash
+# Copy a string directly
+echo "This is now in my clipboard" | clip
+
+# Copy the contents of a file
+cat ~/.ssh/id_rsa.pub | clip
+
+# Copy the output of a command
+ls -la | clip
+```
+
+**Pasting from the clipboard**
+
+```bash
+# Paste clipboard contents directly into the terminal
+clip
+
+# Paste clipboard contents into a new file
+clip > pasted_data.txt
+
+# Pipe clipboard contents into another command
+clip | grep "error"
+```
+
+**Advanced Chaining**
+
+```bash
+# Read clipboard, convert to lowercase, and copy the result back to clipboard
+clip | tr 'A-Z' 'a-z' | clip
+
+# Format JSON currently in the clipboard and copy it back
+clip | jq . | clip
+```
+
+</details>
+
 - ### Power Utilities
 
   - **extract:** One command to decompress almost any archive file (`.tar`, `.zip`, `.gz`, etc.).
@@ -167,7 +221,7 @@ Optimized for speed and low latency. Benchmarked using [zsh-bench](https://githu
 | Metric | Time |
 | :--- | :--- |
 | **First Prompt** | `~69 ms` 🚀 |
-| **Command Lag** | `~70 ms` |
+| **Command Lag** | `~55 ms` |
 | **Input Lag** | `~3 ms` |
 
 ![benchmark](benchmark/z-shift-bench.webp)

@@ -23,11 +23,49 @@ zinit load starship/starship
 
 # --- Core Libraries & Utilities ---
 zinit wait lucid for \
-    OMZL::clipboard.zsh \
     OMZP::extract \
     OMZP::sudo \
-    OMZP::git \
     MichaelAquilina/zsh-you-should-use
+
+# clipboard
+# Supports: macOS, Wayland, X11 (xclip/xsel), WSL 1/2, Cygwin, MSYS2
+() {
+  if [[ $OSTYPE == darwin* ]]; then
+    pbcopy()  { command pbcopy  "$@"; }
+    pbpaste() { command pbpaste "$@"; }
+  elif [[ -n $WAYLAND_DISPLAY ]] && (( $+commands[wl-copy] )); then
+    pbcopy()  { wl-copy "$@"; }
+    pbpaste() { wl-paste --no-newline "$@"; }
+  elif [[ -n $DISPLAY ]] && (( $+commands[xclip] )); then
+    pbcopy()  { xclip -selection clipboard -in  "$@"; }
+    pbpaste() { xclip -selection clipboard -out "$@"; }
+  elif [[ -n $DISPLAY ]] && (( $+commands[xsel] )); then
+    pbcopy()  { xsel --clipboard --input  "$@"; }
+    pbpaste() { xsel --clipboard --output "$@"; }
+  elif (( $+commands[wl-copy] )); then
+    pbcopy()  { wl-copy "$@"; }
+    pbpaste() { wl-paste --no-newline "$@"; }
+  elif [[ $OSTYPE == linux* && -r /proc/version && "$(< /proc/version)" == *[Mm]icrosoft* ]]; then
+    pbcopy()  { clip.exe; }
+    pbpaste() { powershell.exe -NoProfile -NonInteractive -Command Get-Clipboard | tr -d '\r'; }
+  elif [[ $OSTYPE == (cygwin*|msys) ]]; then
+    pbcopy()  { tee > /dev/clipboard; }
+    pbpaste() { print -- "$(< /dev/clipboard)"; }
+  else
+    clip() {
+      print -u2 "clip: no clipboard backend detected on this system"
+      return 127
+    }
+    return 0
+  fi
+  clip() {
+    if [[ -t 0 ]]; then
+      pbpaste
+    else
+      pbcopy
+    fi
+  }
+}
 
 # --- BAT (Cat replacement) ---
 zinit ice as"program" from"gh-r" mv"bat* -> bat" pick"bat/bat" wait lucid
@@ -47,8 +85,9 @@ zinit load sharkdp/fd
 zinit ice as"program" from"gh-r" wait lucid \
     atclone"./fzf --zsh > init.zsh" \
     atpull"%atclone" \
-    src"init.zsh"
-zinit load junegunn/fzf
+    src"init.zsh" \
+    atload'export FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix --hidden --follow --exclude .git"; export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"'
+zinit light junegunn/fzf
 
 # --- RIPGREP (Grep replacement) ---
 zinit ice as"program" from"gh-r" mv"ripgrep* -> ripgrep" pick"ripgrep/rg" wait lucid
@@ -63,24 +102,27 @@ zinit ice as"program" from"gh-r" pick"zoxide" \
     atclone"./zoxide init zsh --cmd cd > init.zsh" \
     atpull"%atclone" \
     src"init.zsh" nocompile"init.zsh"
-zinit load ajeetdsouza/zoxide
+zinit light ajeetdsouza/zoxide
 
 # --- Completions, Suggestions & Highlighting ---
 
-# 1. Load Completions First
+# Load extra completions first
 zinit wait lucid blockf atpull"zinit creinstall -q ." for \
     zsh-users/zsh-completions
 
-# 2. FZF-Tab (Replaces standard completion menu)
-zinit wait lucid atinit"zicompinit; zicdreplay" \
-    atload'compdump="${ZSH_COMPDUMP:-${ZDOTDIR:-$HOME}/.zcompdump}"; [[ ! -s "${compdump}.zwc" || "$compdump" -nt "${compdump}.zwc" ]] && zcompile "$compdump" &!' \
-    for Aloxaf/fzf-tab
 
-# 3. Syntax Highlighting (Must load after completions)
-zinit wait lucid for zdharma-continuum/fast-syntax-highlighting
+# IMPORTANT ORDER:
+# compinit -> fzf-tab -> syntax-highlighting -> autosuggestions
 
-# 4. Autosuggestions (Must load absolutely last)
-zinit wait lucid atload"_zsh_autosuggest_start" for zsh-users/zsh-autosuggestions
+zinit wait lucid \
+    atinit"zicompinit; zicdreplay" \
+    atload'compdump="${ZSH_COMPDUMP:-${ZDOTDIR:-$HOME}/.zcompdump}";
+            [[ ! -s "${compdump}.zwc" || "$compdump" -nt "${compdump}.zwc" ]] &&
+            zcompile "$compdump" &!' \
+    for Aloxaf/fzf-tab \
+        zdharma-continuum/fast-syntax-highlighting \
+    atload"_zsh_autosuggest_start" \
+        zsh-users/zsh-autosuggestions
 
 # =============================================================================
 # 4. CONFIGURATION
@@ -101,10 +143,6 @@ setopt SHARE_HISTORY
 setopt APPEND_HISTORY
 setopt AUTO_CD
 
-# --- FZF Variables ---
-export FZF_DEFAULT_COMMAND="fd --type f --strip-cwd-prefix --hidden --follow --exclude .git"
-export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-
 # --- Completion Styling (Replaces OMZL::completion.zsh) ---
 # Case-insensitive matching (a matches A)
 zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|[._-]=* r:|=*'
@@ -123,6 +161,8 @@ zstyle ':completion:*:descriptions' format '[%d]'
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always -- "$realpath"'
 # Switch completion groups using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
+# Scroll in eza preview using Ctrl+j/k bindings
+zstyle ':fzf-tab:*' fzf-flags --bind 'ctrl-j:preview-down' --bind 'ctrl-k:preview-up'
 
 # =============================================================================
 # 5. ALIASES & FUNCTIONS
@@ -135,9 +175,66 @@ alias ...='cd ../..'
 alias md='mkdir -p'
 
 # --- Quick Edits ---
-alias sconf='${EDITOR:-nano} ~/.config/starship.toml'
-alias zconf='${EDITOR:-nano} ~/.zshrc'
+# Config shortcuts
+_edit() {
+  local editor="${VISUAL:-${EDITOR:-$(command -v nano 2>/dev/null || command -v vi 2>/dev/null)}}"
+  if [[ -z "$editor" ]]; then
+    echo "No editor found (tried \$VISUAL, \$EDITOR, nano, vi)" >&2
+    return 1
+  fi
+  "$editor" "$@"
+}
+
+sconf() { _edit "${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml" }
+zconf() { _edit "${ZDOTDIR:-$HOME}/.zshrc" }
 alias reload='exec zsh'
+
+# --- Git Shortcuts ---
+
+alias g='git'
+alias ga='git add'
+alias gaa='git add -A'
+alias gc='git commit'
+alias gcm='git commit -m'
+alias gcam='git commit --amend'
+alias gcb='git checkout -b'
+alias gco='git checkout'
+alias gd='git diff'
+alias gds='git diff --staged'
+alias gf='git fetch'
+alias gl='git log --oneline --graph --decorate'
+alias gla='git log --oneline --graph --decorate --all'
+alias gm='git merge'
+alias gp='git push'
+alias gpf='git push --force-with-lease'
+alias gpl='git pull'
+alias gpr='git pull --rebase'
+alias grb='git rebase'
+alias grbi='git rebase -i'
+alias grs='git restore'
+alias grss='git restore --staged'
+alias gs='git status'
+alias gss='git status -s'
+alias gst='git stash'
+alias gstp='git stash pop'
+alias gstl='git stash list'
+alias gsw='git switch'
+alias gswc='git switch -c'
+alias gpsu='git push --set-upstream origin $(git branch --show-current)' # Push and set upstream in one go
+alias gundo='git reset --soft HEAD~1' # Undo last commit but keep changes staged
+alias gnuke='git reset --hard HEAD~1' # Nuke last commit and changes entirely
+alias gbr='git branch --sort=-committerdate' # Show branches sorted by most recent commit
+
+# Open the git repository's remote URL in the default web browser
+
+gopen() {
+  local url=$(git remote get-url origin 2>/dev/null)
+  [[ -z "$url" ]] && echo "No remote 'origin' found" && return 1
+
+  url=$(echo "$url" | sed 's|^git@\(.*\):|https://\1/|; s|\.git$||')
+
+  open "$url" 2>/dev/null || xdg-open "$url" 2>/dev/null || { echo "Could not open: $url" >&2; return 1; }
+}
 
 # --- Human readable disk usage ---
 alias df='df -h'
