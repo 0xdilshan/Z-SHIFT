@@ -226,7 +226,7 @@ gopen() {
 
   url=$(echo "$url" | sed 's|^git@\(.*\):|https://\1/|; s|\.git$||')
 
-  open "$url" 2>/dev/null || xdg-open "$url" 2>/dev/null || echo "Could not open: $url"
+  open "$url" 2>/dev/null || xdg-open "$url" 2>/dev/null || { echo "Could not open: $url"; return 1; }
 }
 
 # --- Human readable disk usage ---
