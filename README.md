@@ -106,7 +106,7 @@ chmod +x install.sh
 
 ## 📥 Update
 
-You can easily update to latest .zshrc config using alias in the below.
+Run the alias below to update to the latest `.zshrc` config.
 
 ```bash
 zsu

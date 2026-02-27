@@ -52,6 +52,10 @@ zinit wait lucid for \
     pbcopy()  { tee > /dev/clipboard; }
     pbpaste() { print -- "$(< /dev/clipboard)"; }
   else
+    clip() {
+      print -u2 "clip: no clipboard backend detected on this system"
+      return 127
+    }
     return 0
   fi
   clip() {
@@ -173,8 +177,11 @@ alias md='mkdir -p'
 # --- Quick Edits ---
 # Config shortcuts
 _edit() {
-  local editor
-  editor=$(command -v nano 2>/dev/null || command -v vi)
+  local editor="${VISUAL:-${EDITOR:-$(command -v nano 2>/dev/null || command -v vi 2>/dev/null)}}"
+  if [[ -z "$editor" ]]; then
+    echo "No editor found (tried \$VISUAL, \$EDITOR, nano, vi)" >&2
+    return 1
+  fi
   "$editor" "$@"
 }
 
@@ -226,7 +233,7 @@ gopen() {
 
   url=$(echo "$url" | sed 's|^git@\(.*\):|https://\1/|; s|\.git$||')
 
-  open "$url" 2>/dev/null || xdg-open "$url" 2>/dev/null || { echo "Could not open: $url"; return 1; }
+  open "$url" 2>/dev/null || xdg-open "$url" 2>/dev/null || { echo "Could not open: $url" >&2; return 1; }
 }
 
 # --- Human readable disk usage ---
