@@ -30,43 +30,37 @@ zinit wait lucid for \
 # clipboard
 # Supports: macOS, Wayland, X11 (xclip/xsel), WSL 1/2, Cygwin, MSYS2
 () {
-  # Detect Wayland early so xclip/xsel (which may exist via XWayland) don't win
   if [[ $OSTYPE == darwin* ]]; then
-    pbcopy()  { command pbcopy  "$@" }
-    pbpaste() { command pbpaste "$@" }
-
+    pbcopy()  { command pbcopy  "$@"; }
+    pbpaste() { command pbpaste "$@"; }
   elif [[ -n $WAYLAND_DISPLAY ]] && (( $+commands[wl-copy] )); then
-    pbcopy()  { wl-copy "$@" }
-    pbpaste() { wl-paste --no-newline "$@" }
-
+    pbcopy()  { wl-copy "$@"; }
+    pbpaste() { wl-paste --no-newline "$@"; }
   elif [[ -n $DISPLAY ]] && (( $+commands[xclip] )); then
-    pbcopy()  { xclip -selection clipboard -in  "$@" }
-    pbpaste() { xclip -selection clipboard -out "$@" }
-
+    pbcopy()  { xclip -selection clipboard -in  "$@"; }
+    pbpaste() { xclip -selection clipboard -out "$@"; }
   elif [[ -n $DISPLAY ]] && (( $+commands[xsel] )); then
-    pbcopy()  { xsel --clipboard --input  "$@" }
-    pbpaste() { xsel --clipboard --output "$@" }
-
+    pbcopy()  { xsel --clipboard --input  "$@"; }
+    pbpaste() { xsel --clipboard --output "$@"; }
   elif (( $+commands[wl-copy] )); then
-    # Wayland but WAYLAND_DISPLAY not set (edge cases)
-    pbcopy()  { wl-copy "$@" }
-    pbpaste() { wl-paste --no-newline "$@" }
-
+    pbcopy()  { wl-copy "$@"; }
+    pbpaste() { wl-paste --no-newline "$@"; }
   elif [[ $OSTYPE == linux* && -r /proc/version && "$(< /proc/version)" == *[Mm]icrosoft* ]]; then
-    # Prevent clip.exe from hanging on bare calls; allow file redirection
-    pbcopy()  { clip.exe < "${1:-/dev/stdin}" }
-    # Strip Windows carriage returns to prevent Linux formatting issues
-    pbpaste() { powershell.exe -NoProfile -NonInteractive -Command Get-Clipboard | tr -d '\r' }
-
+    pbcopy()  { clip.exe; }
+    pbpaste() { powershell.exe -NoProfile -NonInteractive -Command Get-Clipboard | tr -d '\r'; }
   elif [[ $OSTYPE == (cygwin*|msys) ]]; then
-    pbcopy()  { tee > /dev/clipboard }
-    pbpaste() { print -- "$(< /dev/clipboard)" }
-
+    pbcopy()  { tee > /dev/clipboard; }
+    pbpaste() { print -- "$(< /dev/clipboard)"; }
   else
-    return 0  # No clipboard backend found; skip defining functions
+    return 0
   fi
-
-  clip() { [[ -t 0 ]] && pbpaste || pbcopy }
+  clip() {
+    if [[ -t 0 ]]; then
+      pbpaste
+    else
+      pbcopy
+    fi
+  }
 }
 
 # --- BAT (Cat replacement) ---
