@@ -164,7 +164,7 @@ if [[ "$OS_TYPE" == "linux" ]]; then
     echo -e "${YELLOW}Installing clipboard utility...${NC}"
 
     # Detect display server: Wayland takes priority, fall back to X11
-    if [[ -n "$WAYLAND_DISPLAY" ]]; then
+    if [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
         echo -e "${BLUE}Wayland detected — installing wl-clipboard${NC}"
         case "$DISTRO_FAMILY" in
             debian) install_pkg wl-clipboard ;;
@@ -172,7 +172,7 @@ if [[ "$OS_TYPE" == "linux" ]]; then
             fedora) install_pkg wl-clipboard ;;
             suse)   install_pkg wl-clipboard ;;
         esac
-    elif [[ -n "$DISPLAY" ]]; then
+    elif [[ -n "${DISPLAY:-}" ]]; then
         echo -e "${BLUE}X11 detected — installing xclip${NC}"
         case "$DISTRO_FAMILY" in
             debian) install_pkg xclip ;;
