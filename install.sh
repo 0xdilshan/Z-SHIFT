@@ -34,7 +34,7 @@ fi
 TEMP_DIRS=()
 
 cleanup() {
-    for d in "${TEMP_DIRS[@]}"; do
+    for d in "${TEMP_DIRS[@]-}"; do
         [ -n "$d" ] && [ -d "$d" ] && rm -rf "$d"
     done
 }
@@ -55,6 +55,7 @@ DISTRO_LIKE="unknown"
 if [[ "$OSTYPE" == "darwin"* ]]; then
     OS_TYPE="macos"
     DISTRO="macos"
+    DISTRO_FAMILY="macos"
 elif [ -f /etc/os-release ]; then
     OS_TYPE="linux"
     # shellcheck disable=SC1091
@@ -92,7 +93,10 @@ _resolve_distro_family() {
     esac
 }
 
-DISTRO_FAMILY="$(_resolve_distro_family "$DISTRO" "$DISTRO_LIKE")"
+# Do not overwrite macOS family
+if [[ "$OS_TYPE" != "macos" ]]; then
+    DISTRO_FAMILY="$(_resolve_distro_family "$DISTRO" "$DISTRO_LIKE")"
+fi
 
 install_pkg() {
     local pkgs=("$@")
