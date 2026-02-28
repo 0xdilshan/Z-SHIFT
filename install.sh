@@ -51,6 +51,7 @@ echo -e "${CYAN}>>> Initiating Z-Shift Environment Deployment...${NC}"
 OS_TYPE="unknown"
 DISTRO="unknown"
 DISTRO_LIKE="unknown"
+DISTRO_FAMILY="unknown"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     OS_TYPE="macos"
