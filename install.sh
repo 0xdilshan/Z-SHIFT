@@ -106,20 +106,38 @@ install_pkg() {
     case "$DISTRO_FAMILY" in
         debian)
             export DEBIAN_FRONTEND=noninteractive
-            sudo apt-get update -qq -y > /dev/null
-            sudo apt-get install -qq -y "${pkgs[@]}" > /dev/null
+            sudo apt-get update -qq -y > /dev/null || {
+                echo -e "${RED}Failed: apt-get update${NC}"
+                exit 1
+            }
+            sudo apt-get install -qq -y "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via apt-get${NC}"
+                exit 1
+            }
             ;;
         arch)
-            sudo pacman -Sy --quiet --noconfirm --needed "${pkgs[@]}" > /dev/null
+            sudo pacman -Sy --quiet --noconfirm --needed "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via pacman${NC}"
+                exit 1
+            }
             ;;
         fedora)
-            sudo dnf install -q -y "${pkgs[@]}" > /dev/null
+            sudo dnf install -q -y "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via dnf${NC}"
+                exit 1
+            }
             ;;
         suse)
-            sudo zypper install -q -y "${pkgs[@]}" > /dev/null
+            sudo zypper install -q -y "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via zypper${NC}"
+                exit 1
+            }
             ;;
         macos)
-            brew install -q "${pkgs[@]}" > /dev/null
+            brew install -q "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via brew${NC}"
+                exit 1
+            }
             ;;
         *)
             echo -e "${RED}Unsupported distribution: ${DISTRO} (family: ${DISTRO_FAMILY})${NC}"
