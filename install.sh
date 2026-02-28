@@ -34,7 +34,7 @@ fi
 TEMP_DIRS=()
 
 cleanup() {
-    for d in "${TEMP_DIRS[@]}"; do
+    for d in "${TEMP_DIRS[@]-}"; do
         [ -n "$d" ] && [ -d "$d" ] && rm -rf "$d"
     done
 }
@@ -50,50 +50,105 @@ echo -e "${CYAN}>>> Initiating Z-Shift Environment Deployment...${NC}"
 # =============================================================================
 OS_TYPE="unknown"
 DISTRO="unknown"
+DISTRO_LIKE="unknown"
+DISTRO_FAMILY="unknown"
 
 if [[ "$OSTYPE" == "darwin"* ]]; then
     OS_TYPE="macos"
     DISTRO="macos"
+    DISTRO_FAMILY="macos"
 elif [ -f /etc/os-release ]; then
     OS_TYPE="linux"
     # shellcheck disable=SC1091
     . /etc/os-release
-    DISTRO="$ID"
+    DISTRO="${ID:-unknown}"
+    DISTRO_LIKE="${ID_LIKE:-unknown}"  # Catches derivatives (e.g. ID_LIKE="debian")
 fi
 
 echo -e "${BLUE}Detected OS: ${OS_TYPE} (${DISTRO})${NC}"
+
+# Resolve distro family from ID or ID_LIKE
+_resolve_distro_family() {
+    local id="$1"
+    local id_like="$2"
+
+    case "$id" in
+        ubuntu|debian|pop|kali|linuxmint|raspbian|elementary|zorin)
+            echo "debian" ;;
+        arch|manjaro|endeavouros|garuda|artix)
+            echo "arch" ;;
+        fedora|rhel|centos|rocky|almalinux|nobara)
+            echo "fedora" ;;
+        opensuse*|suse*)
+            echo "suse" ;;
+        *)
+            # Fall back to ID_LIKE for unrecognised derivatives
+            case "$id_like" in
+                *debian*|*ubuntu*) echo "debian" ;;
+                *arch*)            echo "arch"   ;;
+                *fedora*|*rhel*)   echo "fedora" ;;
+                *suse*)            echo "suse"   ;;
+                *)                 echo "unknown" ;;
+            esac
+            ;;
+    esac
+}
+
+# Do not overwrite macOS family
+if [[ "$OS_TYPE" != "macos" ]]; then
+    DISTRO_FAMILY="$(_resolve_distro_family "$DISTRO" "$DISTRO_LIKE")"
+fi
 
 install_pkg() {
     local pkgs=("$@")
     echo -e "${YELLOW}Installing: ${pkgs[*]}...${NC}"
 
-    case $DISTRO in
-        ubuntu|debian|pop|kali|linuxmint)
+    case "$DISTRO_FAMILY" in
+        debian)
             export DEBIAN_FRONTEND=noninteractive
-            sudo apt-get update -qq -y > /dev/null
-            sudo apt-get install -qq -y "${pkgs[@]}" > /dev/null
+            sudo apt-get update -qq -y > /dev/null || {
+                echo -e "${RED}Failed: apt-get update${NC}"
+                exit 1
+            }
+            sudo apt-get install -qq -y "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via apt-get${NC}"
+                exit 1
+            }
             ;;
-        arch|manjaro|endeavouros)
-            sudo pacman -Sy --quiet --noconfirm --needed "${pkgs[@]}" > /dev/null
+        arch)
+            sudo pacman -Sy --quiet --noconfirm --needed "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via pacman${NC}"
+                exit 1
+            }
             ;;
-        fedora|rhel|centos)
-            sudo dnf install -q -y "${pkgs[@]}" > /dev/null
+        fedora)
+            sudo dnf install -q -y "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via dnf${NC}"
+                exit 1
+            }
             ;;
-        opensuse*|suse)
-            sudo zypper install -q -y "${pkgs[@]}" > /dev/null
+        suse)
+            sudo zypper install -q -y "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via zypper${NC}"
+                exit 1
+            }
             ;;
         macos)
-            brew install -q "${pkgs[@]}" > /dev/null
+            brew install -q "${pkgs[@]}" > /dev/null || {
+                echo -e "${RED}Failed to install ${pkgs[*]} via brew${NC}"
+                exit 1
+            }
             ;;
         *)
-            echo -e "${RED}Unsupported distribution: $DISTRO${NC}"
+            echo -e "${RED}Unsupported distribution: ${DISTRO} (family: ${DISTRO_FAMILY})${NC}"
+            echo -e "${RED}Please install the following packages manually: ${pkgs[*]}${NC}"
             exit 1
             ;;
     esac
 }
 
 # =============================================================================
-# 1. PRE-REQUISITES (Homebrew for MacOS)
+# 1. PRE-REQUISITES (Homebrew for macOS)
 # =============================================================================
 if [[ "$OS_TYPE" == "macos" ]]; then
     if ! command -v brew &> /dev/null; then
@@ -101,6 +156,7 @@ if [[ "$OS_TYPE" == "macos" ]]; then
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" > /dev/null || {
             echo -e "${RED}Homebrew installation failed.${NC}"; exit 1
         }
+        # Support both Apple Silicon (/opt/homebrew) and Intel (/usr/local) paths
         if [ -f "/opt/homebrew/bin/brew" ]; then
             eval "$(/opt/homebrew/bin/brew shellenv)"
         elif [ -f "/usr/local/bin/brew" ]; then
@@ -114,12 +170,57 @@ fi
 # =============================================================================
 echo -e "${YELLOW}Installing base dependencies...${NC}"
 
-COMMON_DEPS=(git curl unzip zsh)
+COMMON_DEPS=(git curl wget unzip zsh gnupg)
 
 if [[ "$OS_TYPE" == "macos" ]]; then
-    install_pkg git curl wget unzip zsh
+    install_pkg "${COMMON_DEPS[@]}"
 else
-    install_pkg wget gnupg "${COMMON_DEPS[@]}"
+    install_pkg "${COMMON_DEPS[@]}"
+fi
+
+# =============================================================================
+# 2.1 CLIPBOARD UTILITY
+# =============================================================================
+# macOS ships with pbcopy/pbpaste natively — no installation required.
+# Linux needs xclip (X11) or wl-clipboard (Wayland) for clipboard access.
+if [[ "$OS_TYPE" == "linux" ]]; then
+    echo -e "${YELLOW}Installing clipboard utility...${NC}"
+
+    # Detect display server: Wayland takes priority, fall back to X11
+    if [[ -n "${WAYLAND_DISPLAY:-}" ]]; then
+        echo -e "${BLUE}Wayland detected — installing wl-clipboard${NC}"
+        case "$DISTRO_FAMILY" in
+            debian) install_pkg wl-clipboard ;;
+            arch)   install_pkg wl-clipboard ;;
+            fedora) install_pkg wl-clipboard ;;
+            suse)   install_pkg wl-clipboard ;;
+        esac
+    elif [[ -n "${DISPLAY:-}" ]]; then
+        echo -e "${BLUE}X11 detected — installing xclip${NC}"
+        case "$DISTRO_FAMILY" in
+            debian) install_pkg xclip ;;
+            arch)   install_pkg xclip ;;
+            fedora) install_pkg xclip ;;
+            suse)   install_pkg xclip ;;
+        esac
+    else
+        # Headless / TTY-only: install both so the env is ready for either
+        echo -e "${YELLOW}No display server detected (headless/TTY) — installing xclip + wl-clipboard as fallback${NC}"
+        case "$DISTRO_FAMILY" in
+            debian) install_pkg xclip wl-clipboard ;;
+            arch)   install_pkg xclip wl-clipboard ;;
+            fedora) install_pkg xclip wl-clipboard ;;
+            suse)   install_pkg xclip wl-clipboard ;;
+        esac
+    fi
+
+    # Verify at least one clipboard tool landed
+    if ! command -v xclip &>/dev/null && ! command -v wl-copy &>/dev/null; then
+        echo -e "${RED}Warning: no clipboard utility found after installation.${NC}"
+        echo -e "${RED}You may need to install xclip or wl-clipboard manually.${NC}"
+    else
+        echo -e "${GREEN}Clipboard utility installed successfully.${NC}"
+    fi
 fi
 
 # =============================================================================

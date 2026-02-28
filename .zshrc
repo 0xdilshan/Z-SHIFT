@@ -187,6 +187,7 @@ _edit() {
 
 sconf() { _edit "${XDG_CONFIG_HOME:-$HOME/.config}/starship.toml" }
 zconf() { _edit "${ZDOTDIR:-$HOME}/.zshrc" }
+zlocal() { _edit "${ZDOTDIR:-$HOME}/.zshrc.local" }
 alias reload='exec zsh'
 
 # --- Git Shortcuts ---
