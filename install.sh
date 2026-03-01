@@ -62,12 +62,11 @@ elif [ -f /etc/os-release ]; then
     # shellcheck disable=SC1091
     . /etc/os-release
     DISTRO="${ID:-unknown}"
-    DISTRO_LIKE="${ID_LIKE:-unknown}"  # Catches derivatives (e.g. ID_LIKE="debian")
+    DISTRO_LIKE="${ID_LIKE:-unknown}"
 fi
 
 echo -e "${BLUE}Detected OS: ${OS_TYPE} (${DISTRO})${NC}"
 
-# Resolve distro family from ID or ID_LIKE
 _resolve_distro_family() {
     local id="$1"
     local id_like="$2"
@@ -82,7 +81,7 @@ _resolve_distro_family() {
         opensuse*|suse*)
             echo "suse" ;;
         *)
-            # Fall back to ID_LIKE for unrecognised derivatives
+            # ID_LIKE can be space-separated (e.g. "rhel fedora"); glob covers it
             case "$id_like" in
                 *debian*|*ubuntu*) echo "debian" ;;
                 *arch*)            echo "arch"   ;;
@@ -94,9 +93,14 @@ _resolve_distro_family() {
     esac
 }
 
-# Do not overwrite macOS family
 if [[ "$OS_TYPE" != "macos" ]]; then
     DISTRO_FAMILY="$(_resolve_distro_family "$DISTRO" "$DISTRO_LIKE")"
+fi
+
+# Verify sudo is available on Linux before attempting privileged installs
+if [[ "$OS_TYPE" == "linux" ]] && ! command -v sudo &>/dev/null; then
+    echo -e "${RED}sudo is required but not found. Please install sudo or run as root.${NC}"
+    exit 1
 fi
 
 install_pkg() {
@@ -106,37 +110,31 @@ install_pkg() {
     case "$DISTRO_FAMILY" in
         debian)
             export DEBIAN_FRONTEND=noninteractive
-            sudo apt-get update -qq -y > /dev/null || {
-                echo -e "${RED}Failed: apt-get update${NC}"
-                exit 1
+            sudo apt-get update -qq > /dev/null || {          # -y is invalid for update
+                echo -e "${RED}Failed: apt-get update${NC}"; exit 1
             }
             sudo apt-get install -qq -y "${pkgs[@]}" > /dev/null || {
-                echo -e "${RED}Failed to install ${pkgs[*]} via apt-get${NC}"
-                exit 1
+                echo -e "${RED}Failed to install ${pkgs[*]} via apt-get${NC}"; exit 1
             }
             ;;
         arch)
-            sudo pacman -Sy --quiet --noconfirm --needed "${pkgs[@]}" > /dev/null || {
-                echo -e "${RED}Failed to install ${pkgs[*]} via pacman${NC}"
-                exit 1
+            sudo pacman -Sy -q --noconfirm --needed "${pkgs[@]}" > /dev/null || {  # --quiet -> -q
+                echo -e "${RED}Failed to install ${pkgs[*]} via pacman${NC}"; exit 1
             }
             ;;
         fedora)
             sudo dnf install -q -y "${pkgs[@]}" > /dev/null || {
-                echo -e "${RED}Failed to install ${pkgs[*]} via dnf${NC}"
-                exit 1
+                echo -e "${RED}Failed to install ${pkgs[*]} via dnf${NC}"; exit 1
             }
             ;;
         suse)
             sudo zypper install -q -y "${pkgs[@]}" > /dev/null || {
-                echo -e "${RED}Failed to install ${pkgs[*]} via zypper${NC}"
-                exit 1
+                echo -e "${RED}Failed to install ${pkgs[*]} via zypper${NC}"; exit 1
             }
             ;;
         macos)
             brew install -q "${pkgs[@]}" > /dev/null || {
-                echo -e "${RED}Failed to install ${pkgs[*]} via brew${NC}"
-                exit 1
+                echo -e "${RED}Failed to install ${pkgs[*]} via brew${NC}"; exit 1
             }
             ;;
         *)
@@ -151,17 +149,13 @@ install_pkg() {
 # 1. PRE-REQUISITES (Homebrew for macOS)
 # =============================================================================
 if [[ "$OS_TYPE" == "macos" ]]; then
-    if ! command -v brew &> /dev/null; then
+    if ! command -v brew &>/dev/null; then
         echo -e "${YELLOW}Homebrew not found. Installing Homebrew (this may take a while)...${NC}"
         /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" > /dev/null || {
             echo -e "${RED}Homebrew installation failed.${NC}"; exit 1
         }
-        # Support both Apple Silicon (/opt/homebrew) and Intel (/usr/local) paths
-        if [ -f "/opt/homebrew/bin/brew" ]; then
-            eval "$(/opt/homebrew/bin/brew shellenv)"
-        elif [ -f "/usr/local/bin/brew" ]; then
-            eval "$(/usr/local/bin/brew shellenv)"
-        fi
+        # Let Homebrew itself report its prefix — handles Intel, Apple Silicon, and custom paths
+        eval "$(brew shellenv 2>/dev/null || true)"
     fi
 fi
 
@@ -170,13 +164,14 @@ fi
 # =============================================================================
 echo -e "${YELLOW}Installing base dependencies...${NC}"
 
-COMMON_DEPS=(git curl wget unzip zsh gnupg)
-
 if [[ "$OS_TYPE" == "macos" ]]; then
-    install_pkg "${COMMON_DEPS[@]}"
+    # zsh ships with macOS 10.15+; omit to avoid a no-op warning from Homebrew
+    COMMON_DEPS=(git curl wget unzip gnupg)
 else
-    install_pkg "${COMMON_DEPS[@]}"
+    COMMON_DEPS=(git curl wget unzip zsh gnupg)
 fi
+
+install_pkg "${COMMON_DEPS[@]}"
 
 # =============================================================================
 # 2.1 CLIPBOARD UTILITY
