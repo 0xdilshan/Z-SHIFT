@@ -239,7 +239,7 @@ else
             sudo chmod 644 /etc/apt/keyrings/gierens.gpg \
                 /etc/apt/sources.list.d/gierens.list
 
-            sudo apt-get update -qq -y > /dev/null && sudo apt-get install -qq -y eza > /dev/null
+            sudo apt-get update -qq > /dev/null && sudo apt-get install -qq -y eza > /dev/null
             ;;
 
         fedora)
